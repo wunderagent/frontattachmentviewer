@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "PDF Click Checker",
+  "version": "1.0",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://app.frontapp.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://app.frontapp.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

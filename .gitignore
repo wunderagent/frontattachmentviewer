@@ -396,3 +396,7 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Built Visual Studio Code Extensions
+*.vsix
+*.code-workspace
