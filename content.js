@@ -1,4 +1,4 @@
-document.addEventListener('click', function (event) {
+document.addEventListener('click', async function (event) {
   const element = event.target;
   const isAttachmentButton = Array.from(element.classList).filter(data => data.startsWith("attachmentBase__StyledAttachmentButton")).length > 0;
   if (!element.attributes.role === "button" || !isAttachmentButton) {
