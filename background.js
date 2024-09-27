@@ -27,15 +27,16 @@ async function getCurrentTab() {
   return tab;
 }
 
-function myShowModal(pdfUrl) {
+async function myShowModal(pdfUrl) {
   console.log('Modal script executed');
   let modal = document.createElement('div');
   modal.innerHTML = `
     <div style="position:fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;">
-      <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;">Marcel is the best</div>  
     <div style="background: white; padding: 20px; border-radius: 10px; max-width: 600px;">
-        <p>You clicked on a PDF link: <a href="${pdfUrl}" target="_blank">${pdfUrl}</a></p>
         <button id="closeModal">Close</button>
+        <object type="application/pdf" data="https://app.frontapp.com${pdfUrl}" width="100%" height="500px">
+        </object>
+        <embed src="https://app.frontapp.com${pdfUrl}" type="application/pdf" width="100%" height="100%">
       </div>
     </div>
   `;
