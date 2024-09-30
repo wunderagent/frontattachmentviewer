@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "PDF Click Checker",
+  "name": "Front-App attachments viewer",
   "version": "1.0",
   "permissions": [
     "storage",
