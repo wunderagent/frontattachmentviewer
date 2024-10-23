@@ -14,14 +14,10 @@ document.addEventListener('click', async function (event) {
   }
   url = url + '&embedded=true';
 
-  let pdfNameDiv = element.querySelector('div[class*="StyledNameDiv"]');
-  let pdfName = pdfNameDiv ? pdfNameDiv.textContent.trim() : null;
-  let fileExtension = pdfName ? pdfName.split('.').pop() : null;
+  let fileName = element.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim() || null;
+  let fileExtension = fileName?.split('.')?.pop() || null;
 
-
-  if (fileExtension !== 'pdf') {
-    return;
-  }
+  mimeType = getMimeType(fileExtension);
 
   event.stopPropagation();
   event.preventDefault();
@@ -31,11 +27,36 @@ document.addEventListener('click', async function (event) {
   await chrome.runtime.sendMessage({ action: "fetchFile", fileUrl: "https://app.frontapp.com" + url },
     (response) => {
       if (document.body.contains(modal)) {
-        injectFileToModal(response.data, pdfName)
+        injectFileToModal(response.data, fileName, mimeType)
       }
     });
 
 }, true);
+
+function getMimeType(fileExtension) {
+  const mimeTypes = {
+    pdf: 'application/pdf',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    gif: 'image/gif',
+    txt: 'text/plain',
+    html: 'text/html',
+    css: 'text/css',
+    js: 'application/javascript',
+    json: 'application/json',
+    xml: 'application/xml',
+    csv: 'text/csv',
+    mp3: 'audio/mpeg',
+    mp4: 'video/mp4',
+    avi: 'video/x-msvideo',
+    zip: 'application/zip',
+    rar: 'application/x-rar-compressed',
+    // Add more mappings as needed
+  };
+
+  return mimeTypes[fileExtension];
+}
 
 function showModal() {
   const modal = document.createElement('div');
@@ -60,19 +81,19 @@ function showModal() {
 }
 
 
-function injectFileToModal(base64Pdf, filename) {
-  const byteCharacters = atob(base64Pdf.split(",")[1]);
+function injectFileToModal(base64data, filename, mimeType) {
+  const byteCharacters = atob(base64data.split(",")[1]);
   const byteNumbers = new Array(byteCharacters.length);
   for (let i = 0; i < byteCharacters.length; i++) {
     byteNumbers[i] = byteCharacters.charCodeAt(i);
   }
   const byteArray = new Uint8Array(byteNumbers);
-  const blob = new Blob([byteArray], { type: 'application/pdf' });
+  const blob = new Blob([byteArray], { type: mimeType });
   const blobUrl = URL.createObjectURL(blob);
 
   const placeholder = document?.getElementById("attachment-placeholder");
   placeholder.innerHTML = `
-    <object id="pdf" data="${blobUrl}" type="application/pdf" style="width: 100%; height: 100%;"></object>
+    <object data="${blobUrl}" type="${mimeType}" style="width: 100%; height: 100%;"></object>
   `;
 
   const button_placeholder = document?.getElementById("download-button-placeholder");
