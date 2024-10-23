@@ -1,9 +1,18 @@
 document.addEventListener('click', async function (event) {
-  const element = event.target;
-  const isAttachmentButton = Array.from(element.classList).filter(data => data.startsWith("attachmentBase__StyledAttachmentButton")).length > 0;
-  if (!element.attributes.role === "button" || !isAttachmentButton) {
+  let element = event.target;
+  
+  if (["closeModal", "downloadButton"].includes(element.id))
+    return;
+
+  while (element && Array.from(element.classList).filter(data => data.startsWith("attachmentBase__StyledAttachmentButton")).length === 0) {
+    element = element.parentElement;
+    console.log("current Element");
+    console.log(element);
+  }
+  if (!element) {
     return;
   }
+  
   let url = element.querySelector('img')
     ?.getAttribute('src')
     ?.replace('?action=thumbnail', '?action=view')
@@ -98,6 +107,7 @@ function injectFileToModal(base64data, filename, mimeType) {
 
   const button_placeholder = document?.getElementById("download-button-placeholder");
   const downloadButton = document.createElement('button');
+  downloadButton.id = 'downloadButton';
   downloadButton.textContent = 'Download';
   button_placeholder.innerHTML = downloadButton.outerHTML;
   button_placeholder.onclick = () => {
