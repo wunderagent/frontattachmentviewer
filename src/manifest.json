@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Front-App attachments viewer",
+  "version": "1.0",
+  "permissions": [
+    "storage",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://app.frontapp.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://app.frontapp.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'self' data:;" 
+  }
+}
