@@ -16,10 +16,6 @@ document.addEventListener('click', async function (event) {
     return;
   }
 
-  event.stopPropagation();
-  event.preventDefault();
-  console.log('Event propagation stopped and default prevented');
-
   let url = element.querySelector('img')
     ?.getAttribute('src')
     ?.replace('?action=thumbnail', '?action=view')
@@ -29,6 +25,11 @@ document.addEventListener('click', async function (event) {
     console.log('No URL found, exiting');
     return;
   }
+
+  event.stopPropagation();
+  event.preventDefault();
+  console.log('Event propagation stopped and default prevented');
+  
   url = url + '&embedded=true';
   console.log('URL:', url);
 
