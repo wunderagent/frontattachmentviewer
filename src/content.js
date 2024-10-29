@@ -1,47 +1,51 @@
 document.addEventListener('click', async function (event) {
+  console.log('Click event detected');
   let element = event.target;
-  
-  if (["closeModal", "downloadButton"].includes(element.id))
+
+  if (["closeModal", "downloadButton"].includes(element.id)) {
+    console.log('Click on closeModal or downloadButton, exiting');
     return;
+  }
 
   // get root attachment element
   while (element && Array.from(element.classList).filter(data => data.startsWith("attachmentBase__StyledAttachmentButton")).length === 0) {
     element = element.parentElement;
-    console.log("current Element");
-    console.log(element);
   }
   if (!element) {
+    console.log('No attachment element found, exiting');
     return;
   }
 
   event.stopPropagation();
   event.preventDefault();
-  
-  // search for all elements with class name attachmentBase__StyledAttachmentButton in the DOM
-  // in the order they appear in the DOM
-  //  get the url of each one of them (), 
-  // open the current one with left and right - arrows if there are other files
-  // when clicked on an arrow, send the url to the backend again and open the next file
+  console.log('Event propagation stopped and default prevented');
 
   let url = element.querySelector('img')
     ?.getAttribute('src')
     ?.replace('?action=thumbnail', '?action=view')
-    ?.replace('&action=thumbnail', '&action=view')
+    ?.replace('&action=thumbnail', '&action=view');
 
   if (!url) {
+    console.log('No URL found, exiting');
     return;
   }
   url = url + '&embedded=true';
+  console.log('URL:', url);
 
   let fileName = element.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim() || null;
   let fileExtension = fileName?.split('.')?.pop() || null;
+  console.log('File name:', fileName);
+  console.log('File extension:', fileExtension);
 
   const modal = showModal();
+  console.log('Modal shown');
 
   await chrome.runtime.sendMessage({ action: "fetchFile", fileUrl: "https://app.frontapp.com" + url },
     (response) => {
+      console.log('File fetched from backend');
       if (document.body.contains(modal)) {
-        injectFileToModal(response.data, fileName, getMimeType(fileExtension))
+        injectFileToModal(response.data, fileName, getMimeType(fileExtension));
+        console.log('File injected into modal');
         findAttachments(element, modal);
       }
     });
@@ -49,15 +53,28 @@ document.addEventListener('click', async function (event) {
 }, true);
 
 function findAttachments(element, modal) {
-  const attachmentElements = Array.from(document.querySelectorAll('.attachmentBase__StyledAttachmentButton'));
-  if (attachmentElements.length <= 1)
+  console.log('Finding attachments');
+  const attachmentElements = Array.from(document.querySelectorAll('[class*="attachmentBase__StyledAttachmentButton"]'));
+  if (attachmentElements.length <= 1) {
+    console.log('No other attachments found');
     return;
-  const currentIndex = attachmentElements.indexOf(element);
+  }
+  let currentIndex = attachmentElements.indexOf(element);
+  console.log('Current attachment index:', currentIndex);
 
   const navigateAttachments = (direction) => {
+    console.log('Navigating attachments, direction:', direction);
     let newIndex = currentIndex + direction;
-    if (newIndex < 0) newIndex = attachmentElements.length - 1;
-    if (newIndex >= attachmentElements.length) newIndex = 0;
+    console.log('New index calculated:', newIndex);
+
+    if (newIndex < 0) {
+      console.log('New index is less than 0, exiting');
+      return;
+    }
+    if (newIndex >= attachmentElements.length) {
+      console.log('New index is greater than or equal to attachment elements length, exiting');
+      return;
+    }
 
     const newElement = attachmentElements[newIndex];
     const newUrl = newElement.querySelector('img')
@@ -65,26 +82,37 @@ function findAttachments(element, modal) {
       ?.replace('?action=thumbnail', '?action=view')
       ?.replace('&action=thumbnail', '&action=view') + '&embedded=true';
 
+    console.log('New URL:', newUrl);
+
     chrome.runtime.sendMessage({ action: "fetchFile", fileUrl: "https://app.frontapp.com" + newUrl },
       (response) => {
+        console.log('New file fetched from backend');
         if (document.body.contains(modal)) {
-          injectFileToModal(response.data, newElement.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim(), getMimeType(newElement.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim().split('.').pop()));
+          filename = newElement.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim();
+          injectFileToModal(response.data, filename, getMimeType(filename.split('.').pop()));
+          console.log('New file injected into modal');
         }
+        currentIndex = newIndex;
       });
   };
 
   const leftArrow = document.createElement('button');
+  leftArrow.id = 'leftArrow';
   leftArrow.textContent = '<';
   leftArrow.onclick = () => navigateAttachments(-1);
   modal.querySelector('div').appendChild(leftArrow);
+  console.log('Left arrow added to modal');
 
   const rightArrow = document.createElement('button');
+  rightArrow.id = 'rightArrow';
   rightArrow.textContent = '>';
   rightArrow.onclick = () => navigateAttachments(1);
   modal.querySelector('div').appendChild(rightArrow);
+  console.log('Right arrow added to modal');
 }
 
 function getMimeType(fileExtension) {
+  console.log('Getting MIME type for extension:', fileExtension);
   const mimeTypes = {
     pdf: 'application/pdf',
     jpg: 'image/jpeg',
@@ -110,6 +138,7 @@ function getMimeType(fileExtension) {
 }
 
 function showModal() {
+  console.log('Showing modal');
   const modal = document.createElement('div');
   modal.innerHTML = `
     <div style="position:fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;">
@@ -125,14 +154,15 @@ function showModal() {
   document.body.appendChild(modal);
 
   document?.getElementById('closeModal')?.addEventListener('click', function () {
+    console.log('Closing modal');
     modal.remove();
   });
 
   return modal;
 }
 
-
 function injectFileToModal(base64data, filename, mimeType) {
+  console.log('Injecting file to modal');
   const byteCharacters = atob(base64data.split(",")[1]);
   const byteNumbers = new Array(byteCharacters.length);
   for (let i = 0; i < byteCharacters.length; i++) {
@@ -153,6 +183,7 @@ function injectFileToModal(base64data, filename, mimeType) {
   downloadButton.textContent = 'Download';
   button_placeholder.innerHTML = downloadButton.outerHTML;
   button_placeholder.onclick = () => {
+    console.log('Downloading file');
     const link = document.createElement('a');
     link.href = blobUrl;
     link.download = filename;
