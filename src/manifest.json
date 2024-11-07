@@ -30,7 +30,8 @@
       "resources": [
         "pdf.js", 
         "pdf.worker.js", 
-        "object_viewer.js"
+        "object_viewer.js",
+        "styles/tailwind.css"
       ],
       "matches": ["<all_urls>"]
     }

@@ -1,7 +1,7 @@
 document.addEventListener('click', async function (event) {
 
   // TODO masto: also include the case where the user clicks anywhere inside Modal
-  if (["closeModal", "downloadButton", "zoom-in", "zoom-out"].includes(event.target.id)) {
+  if (event.target.id === "extension-container" || event.target.closest('#attachment-popup')) {
     return;
   }
 
@@ -33,6 +33,26 @@ document.addEventListener('click', async function (event) {
 
   url = "https://app.frontapp.com" + url;
   let fileName = element.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim() || null;
+  // Create a container element
+  const container = document.createElement('div');
+  container.id = "extension-container";
+  container.classList.add('layer');
+  container.style.pointerEvents = 'auto';
+  container.style.backgroundColor = 'rgba(0,0,0,0.9)';
+  
+
+  // Attach a shadow DOM to the container
+  shadow = container.attachShadow({ mode: 'open' });
+
+  // Add Tailwind CSS and HTML content to the shadow DOM
+  shadow.innerHTML = `
+    <link rel="stylesheet" href="chrome-extension://${chrome.runtime.id}/styles/tailwind.css">
+    <div id="shadow-root" class="w-full h-full"></div>
+  `;
+
+  // Append the container to the body or a specific element on the page
+  document.body.appendChild(container);
+
   const popup = createPopup(fileName);
   const mimeType = getMimeType(fileName?.split('.')?.pop() || null);
 
@@ -45,51 +65,56 @@ document.addEventListener('click', async function (event) {
       break;
   }
   
-  findAttachments(element, popup);
+  const attachments = findAttachments();
+  if (attachments.length > 1)
+    addMultiAttachmentButtonsAndLogic(attachments, element, popup);
   adjustDownloadButton(fileName, url);
   injectFileToModal(url, mimeType);
   console.debug('File injected into modal');
 
 }, true);
 
+let shadow = null;
+
 function createPopup(fileName) {
   const popup = document.createElement('div');
   popup.id = 'attachment-popup';
-  popup.classList.add('layer');
-  popup.style.backgroundColor = "rgba(0,0,0,0.8)";
-  popup.style.pointerEvents = 'auto';
-  popup.style.overflow = "hidden";
-  document.body.appendChild(popup);
+  popup.classList.add('w-full', 'h-full', 'flex', 'flex-col', 'pointer-events-auto', 'overflow-hidden', 'items-center', 'relative');
+  shadow.getElementById("shadow-root").appendChild(popup);
 
   // popup header
   const popupHeader = document.createElement('div');
   popupHeader.id = 'popup-header';
-  popupHeader.style.height = '4rem';
-  popupHeader.style.display = 'flex';
-  popupHeader.style.backgroundColor = 'black';
+  popupHeader.classList.add('h-16', 'flex', 'items-center', 'w-full');
 
   // download button
   const button_placeholder = document.createElement('div');
   button_placeholder.id = 'download-button-placeholder';
   const downloadButton = document.createElement('button');
   downloadButton.id = 'downloadButton';
-  downloadButton.textContent = 'Download';
+  downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+<path d="M5.625 15C5.625 14.5858 5.28921 14.25 4.875 14.25C4.46079 14.25 4.125 14.5858 4.125 15H5.625ZM4.875 16H4.125H4.875ZM19.275 15C19.275 14.5858 18.9392 14.25 18.525 14.25C18.1108 14.25 17.775 14.5858 17.775 15H19.275ZM11.1086 15.5387C10.8539 15.8653 10.9121 16.3366 11.2387 16.5914C11.5653 16.8461 12.0366 16.7879 12.2914 16.4613L11.1086 15.5387ZM16.1914 11.4613C16.4461 11.1347 16.3879 10.6634 16.0613 10.4086C15.7347 10.1539 15.2634 10.2121 15.0086 10.5387L16.1914 11.4613ZM11.1086 16.4613C11.3634 16.7879 11.8347 16.8461 12.1613 16.5914C12.4879 16.3366 12.5461 15.8653 12.2914 15.5387L11.1086 16.4613ZM8.39138 10.5387C8.13662 10.2121 7.66533 10.1539 7.33873 10.4086C7.01212 10.6634 6.95387 11.1347 7.20862 11.4613L8.39138 10.5387ZM10.95 16C10.95 16.4142 11.2858 16.75 11.7 16.75C12.1142 16.75 12.45 16.4142 12.45 16H10.95ZM12.45 5C12.45 4.58579 12.1142 4.25 11.7 4.25C11.2858 4.25 10.95 4.58579 10.95 5H12.45ZM4.125 15V16H5.625V15H4.125ZM4.125 16C4.125 18.0531 5.75257 19.75 7.8 19.75V18.25C6.61657 18.25 5.625 17.2607 5.625 16H4.125ZM7.8 19.75H15.6V18.25H7.8V19.75ZM15.6 19.75C17.6474 19.75 19.275 18.0531 19.275 16H17.775C17.775 17.2607 16.7834 18.25 15.6 18.25V19.75ZM19.275 16V15H17.775V16H19.275ZM12.2914 16.4613L16.1914 11.4613L15.0086 10.5387L11.1086 15.5387L12.2914 16.4613ZM12.2914 15.5387L8.39138 10.5387L7.20862 11.4613L11.1086 16.4613L12.2914 15.5387ZM12.45 16V5H10.95V16H12.45Z" fill="#ffffff"/>
+</svg>`;
+  downloadButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none');
   button_placeholder.appendChild(downloadButton);
   popupHeader.appendChild(button_placeholder);
 
-  //title
-  const popupHeaderTitle = document.createElement('h1');
-  popupHeaderTitle.style.color = 'white';
+  // title
+  const popupHeaderTitle = document.createElement('p');
+  popupHeaderTitle.id = 'popup-header-title';
+  popupHeaderTitle.classList.add('text-xl', 'text-white', 'ml-2', 'flex-grow');
   popupHeaderTitle.innerText = fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName;
   popupHeader.prepend(popupHeaderTitle);
 
   // close button
   const closeButtonContainer = document.createElement('div');
+  closeButtonContainer.classList.add('flex', 'justify-center', 'items-center');
   const closeButton = document.createElement('button');
-  closeButton.textContent = 'Close';
+  closeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#C4C7C5"></path><path d="M0 0h24v24H0z" fill="none"></path></svg>`;
   closeButton.id = 'closeModal';
-  closeButton.addEventListener('click', () => {
-    const modal = document.getElementById('attachment-popup');
+  closeButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none');
+  closeButton.addEventListener('click', () => { 
+    const modal = document.getElementById('extension-container');
     if (modal) {
       modal.remove();
     }
@@ -100,43 +125,68 @@ function createPopup(fileName) {
   popup.appendChild(popupHeader);
 
 
+  // add main container
+  const mainContainer = document.createElement('div');
+  mainContainer.id = "popup-main";
+  mainContainer.classList.add('h-full', 'w-full', 'flex', 'justify-center', 'items-center', 'p-4', 'overflow-hidden');
+  popup.appendChild(mainContainer);
+
+
+  // add left arrow container
+  const previousArrowContainer = document.createElement('div');
+  previousArrowContainer.id = "left-container";
+  previousArrowContainer.classList.add('pointer-events-auto', 'h-full', 'w-20', 'pl-8', 'flex', 'justify-center', 'items-center', 'absolute', 'top-1/2', 'transform', '-translate-y-1/2', 'left-0');
+  mainContainer.appendChild(previousArrowContainer);
+
+
   // add attachment container
   const canvasContainer = document.createElement('div');
   canvasContainer.id = "attachment-container";
-  canvasContainer.style.overflowY = 'auto';
-  canvasContainer.style.height = '88vh'; // Adjust height as needed
-  canvasContainer.style.display = "flex";
-  canvasContainer.style.flexDirection = 'column';
-  canvasContainer.style.justifyContent = "center";
-  canvasContainer.style.alignItems = 'center'; // Center items horizontally
-  canvasContainer.style.marginTop = '0.5rem';
-  popup.appendChild(canvasContainer);
+  canvasContainer.classList.add('overflow-y-scroll', 'h-full', 'w-fit', 'm-8', 'flex', 'flex-col', 'justify-center', 'items-center');
+  mainContainer.appendChild(canvasContainer);
+
+
+  // add right arrow container
+  const nextArrowContainer = document.createElement('div');
+  nextArrowContainer.id = "right-container";
+  nextArrowContainer.classList.add('pointer-events-auto', 'h-full', 'w-20', 'pr-8', 'flex', 'justify-center', 'items-center', 'absolute', 'top-1/2', 'transform', '-translate-y-1/2', 'right-0');
+  mainContainer.appendChild(nextArrowContainer);
 
   // zoom controls
   const controls = document.createElement("div");
   controls.id = "zoom-controls";
-  controls.classList.add("layer");
-  controls.style.display = "flex";
-  controls.style.justifyContent = "center";
-  controls.style.alignItems = "end";
-  controls.style.paddingBottom = "1rem";
+  controls.classList.add('flex', 'justify-center', 'items-center', 'mb-4', 'p-1', 'w-fit', 'rounded-full', 'bg-black', 'bg-opacity-90', 'bg-scroll', 'absolute', 'bottom-2.5', 'left-1/2', 'transform', '-translate-x-1/2');
   const button_zoom_in = document.createElement("button");
   button_zoom_in.id = "zoom-in";
   button_zoom_in.style.pointerEvents = 'auto';
-  button_zoom_in.innerHTML = "+";
+  button_zoom_in.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M4 12H20M12 4V20" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+  button_zoom_in.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'btn', 'btn-circle', 'border-none');
   const button_zoom_out = document.createElement("button");
   button_zoom_out.id = "zoom-out";
   button_zoom_out.style.pointerEvents = 'auto';
-  button_zoom_out.innerHTML = "-";
+  button_zoom_out.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <g id="Complete"><g id="minus"><line fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="4" x2="20" y1="12" y2="12" /></g></g>
+</svg>`;
+  button_zoom_out.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'btn', 'btn-circle', 'border-none');
+  const button_zoom_reset = document.createElement("button");
+  button_zoom_reset.id = "zoom-reset";
+  button_zoom_reset.style.pointerEvents = 'auto';
+  button_zoom_reset.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M15.8053 15.8013L21 21M10.5 7.5V13.5M7.5 10.5H13.5M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+  button_zoom_reset.classList.add('text-white', 'mx-4', 'text-lg', 'h-8', 'w-8');
 
-  controls.appendChild(button_zoom_in);
   controls.appendChild(button_zoom_out);
+  controls.appendChild(button_zoom_reset);
+  controls.appendChild(button_zoom_in);
   popup.appendChild(controls);
   return popup;
 }
 
 function adjustDownloadButton(fileName, url, mimeType) {
-  const downloadButton = document?.getElementById("download-button-placeholder");
+  const downloadButton = shadow.getElementById("download-button-placeholder");
   downloadButton.onclick = () => {
     console.log('Open file downloader');
     const link = document.createElement('a');
@@ -147,13 +197,12 @@ function adjustDownloadButton(fileName, url, mimeType) {
   };
 }
 
-function findAttachments(element, modal) {
+function findAttachments() {
   console.debug('Finding attachments');
-  const attachmentElements = Array.from(document.querySelectorAll('[class*="attachmentBase__StyledAttachmentButton"]'));
-  if (attachmentElements.length <= 1) {
-    console.debug('No other attachments found');
-    return;
-  }
+  return Array.from(document.querySelectorAll('[class*="attachmentBase__StyledAttachmentButton"]'));
+}
+
+function addMultiAttachmentButtonsAndLogic(attachmentElements, element, modal) {
   let currentIndex = attachmentElements.indexOf(element);
   console.debug('Current attachment index:', currentIndex);
 
@@ -178,7 +227,7 @@ function findAttachments(element, modal) {
     const fileName = newElement.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim();
     const mimeType = getMimeType(fileName?.split('.')?.pop() || null);
 
-    const title = document.getElementById('popup-header').querySelector('h1');
+    const title = shadow.getElementById('popup-header-title');
     title.innerText = fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName
 
     switch (mimeType) {
@@ -199,19 +248,28 @@ function findAttachments(element, modal) {
     currentIndex = newIndex;
   };
 
-  const leftArrow = document.createElement('button');
-  leftArrow.id = 'leftArrow';
-  leftArrow.textContent = '<';
+  
+  // controls
+  const leftArrow = document.createElement("button");
+  leftArrow.id = "leftArrow";
+  leftArrow.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M15.7071 4.29289C16.0976 4.68342 16.0976 5.31658 15.7071 5.70711L9.41421 12L15.7071 18.2929C16.0976 18.6834 16.0976 19.3166 15.7071 19.7071C15.3166 20.0976 14.6834 20.0976 14.2929 19.7071L7.29289 12.7071C7.10536 12.5196 7 12.2652 7 12C7 11.7348 7.10536 11.4804 7.29289 11.2929L14.2929 4.29289C14.6834 3.90237 15.3166 3.90237 15.7071 4.29289Z" fill="#ffffff"/>
+</svg>`;
+  leftArrow.classList.add('pointer-events-auto', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none');
   leftArrow.onclick = async () => await navigateAttachments(-1);
-  modal.querySelector('div').appendChild(leftArrow);
-  console.debug('Left arrow added to modal');
+  const leftContainer = shadow.getElementById('left-container');
+  leftContainer.appendChild(leftArrow);
 
   const rightArrow = document.createElement('button');
   rightArrow.id = 'rightArrow';
-  rightArrow.textContent = '>';
+  rightArrow.classList.add('mr-8', 'pointer-events-auto', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none');
+  rightArrow.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M8.29289 4.29289C8.68342 3.90237 9.31658 3.90237 9.70711 4.29289L16.7071 11.2929C17.0976 11.6834 17.0976 12.3166 16.7071 12.7071L9.70711 19.7071C9.31658 20.0976 8.68342 20.0976 8.29289 19.7071C7.90237 19.3166 7.90237 18.6834 8.29289 18.2929L14.5858 12L8.29289 5.70711C7.90237 5.31658 7.90237 4.68342 8.29289 4.29289Z" fill="#ffffff"/>
+</svg>`;
   rightArrow.onclick = async () => await navigateAttachments(1);
-  modal.querySelector('div').appendChild(rightArrow);
-  console.debug('Right arrow added to modal');
+  const rightContainer = shadow.getElementById('right-container');
+  rightContainer.appendChild(rightArrow);
+  // end controls
 }
 
 function getMimeType(fileExtension) {
@@ -240,37 +298,11 @@ function getMimeType(fileExtension) {
   return mimeTypes[fileExtension];
 }
 
-function showModal() {
-  console.debug('Showing modal');
-  const modal = document.createElement('div');
-  modal.innerHTML = `
-    <div style="position:fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; flex-direction:column; justify-content: center; align-items: center;">
-      <div id="modal-head" style="position:fixed; top:0; left:0; width:100%; height:8rem; display:flex; background:black; padding:2rem;">
-        <h1 style="color: white; font-size: 2rem; flex-grow:1;">Attachment Viewer</h1>
-        <div id="download-button-placeholder"></div>
-        <button id="closeModal" style="margin-bottom: 2rem; width: 8rem;">Close</button>
-      </div>
-      <div id="modal-content" style="display:flex; flex-direction:column; background: white; margin: 12rem 18rem; padding: 2rem; border-radius: 1rem; width: 100%; height: 90%;">
-        
-        <div id="attachment-placeholder" style="width: 100%; flex-grow: 1; height: 100%;"><p style="font-size: 2rem;">Loading...</p></div>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-
-  document?.getElementById('closeModal')?.addEventListener('click', function () {
-    console.debug('Closing modal');
-    modal.remove();
-  });
-
-  return modal;
-}
-
 function removeCurrentInjectedContent() {
-  const currentScript = document.getElementById('attachment-viewer-script');
+  const currentScript = shadow.getElementById('attachment-viewer-script');
   if (currentScript)
     document.head.removeChild(currentScript);
-  const placeholder = document.getElementById('attachment-placeholder');
+  const placeholder = shadow.getElementById('attachment-placeholder');
   if (placeholder)
     placeholder.remove();
 }
@@ -296,20 +328,30 @@ async function injectPDFViewer() {
             && event.detail.action == "injectPopup"
             && event.detail.data) {
             console.debug("PDF URL:", event.detail.data);
-            pdfDoc = await pdfjsLib.getDocument({ url: event.detail.data }).promise;
+            pdfDoc = await (pdfjsLib.getDocument({ 
+              url: event.detail.data,
+              disableRange: true // Ensures entire document loads in one request
+              // rangeChunkSize: 65536 // Adjust chunk size if needed
+             }).promise);
             loadPdf();
           }
         });
 
-        document.getElementById('zoom-in').addEventListener('click', () => {
+        shadow.getElementById('zoom-in').addEventListener('click', () => {
           console.debug("Zoom in clicked");
           scale += 0.1;
           loadPdf();
         });
 
-        document.getElementById('zoom-out').addEventListener('click', () => {
+        shadow.getElementById('zoom-out').addEventListener('click', () => {
           console.debug("Zoom out clicked");
           scale = Math.max(0.5, scale - 0.1); // minimum zoom level
+          loadPdf();
+        });
+
+        shadow.getElementById('zoom-reset').addEventListener('click', () => {
+          console.debug("Zoom reset clicked");
+          scale = 1;
           loadPdf();
         });
 
@@ -321,7 +363,7 @@ async function injectPDFViewer() {
           // Load the PDF and render the first page
           console.debug("pdfDoc:", pdfDoc);
               const numPages = pdfDoc.numPages;
-              const canvasContainer = document.getElementById('attachment-container');
+              const canvasContainer = shadow.getElementById('attachment-container');
               canvasContainer.innerHTML = ''; // Clear previous content
 
               const outputScale = window.devicePixelRatio || 1;
@@ -331,11 +373,8 @@ async function injectPDFViewer() {
                   .then(page => {
                     const viewport = page.getViewport({ scale: scale });
                     const canvas = document.createElement('canvas');
-                    canvas.style.marginBottom = '1rem';
                     canvas.width = Math.floor(viewport.width * outputScale);
                     canvas.height = Math.floor(viewport.height * outputScale);
-                    canvas.style.width = `${viewport.width}px`;
-                    canvas.style.height = `${viewport.height}px`;
                     const context = canvas.getContext('2d');
                     context.scale(outputScale, outputScale);
 
@@ -345,7 +384,20 @@ async function injectPDFViewer() {
                     };
 
                     canvasContainer.appendChild(canvas);
-                    page.render(renderContext);
+                    return page.render(renderContext).promise;
+
+                    // page.render(renderContext).promise.then(() => {
+
+                    //   const img = document.createElement('img');
+                    //   img.src = canvas.toDataURL();
+                    //   img.style.marginBottom = '1rem';
+                    //   img.style.width = `${viewport.width}px`;
+                    //   img.style.height = `${viewport.height}px`;
+  
+                    //   canvasContainer.appendChild(img);});
+                  })
+                  .then(() => {
+                    console.debug(`Page ${pageNum} rendered`);
                   })
                   .catch(error => {
                     console.error("Error loading PDF:", error);
@@ -364,12 +416,6 @@ let currentObjectAttachment = null;
 let currentMimeType = null;
 async function injectObjectViewer() {
   removeCurrentInjectedContent();
-
-  // const container = document.getElementById('attachment-container');
-  // const canvas = document.createElement('div');
-  // canvas.id = 'attachment-placeholder';
-  // canvas.style.marginTop = '1rem';
-  // container.appendChild(canvas);
 
   const script = document.createElement("script");
   script.src = chrome.runtime.getURL("object_viewer.js");
@@ -392,15 +438,21 @@ async function injectObjectViewer() {
       }
     });
 
-    document.getElementById('zoom-in').addEventListener('click', () => {
+    shadow.getElementById('zoom-in').addEventListener('click', () => {
       console.debug("Zoom in clicked");
       scale += 0.1;
       loadAttachment();
     });
 
-    document.getElementById('zoom-out').addEventListener('click', () => {
+    shadow.getElementById('zoom-out').addEventListener('click', () => {
       console.debug("Zoom out clicked");
       scale = Math.max(0.5, scale - 0.1); // minimum zoom level
+      loadAttachment();
+    });
+
+    shadow.getElementById('zoom-reset').addEventListener('click', () => {
+      console.debug("Zoom reset clicked");
+      scale = 1;
       loadAttachment();
     });
 
@@ -408,7 +460,8 @@ async function injectObjectViewer() {
     console.debug("worker imported");
 
     function loadAttachment() {
-      const canvasContainer = document.getElementById('attachment-container');
+      console.debug("Loading", currentObjectAttachment, currentMimeType);
+      const canvasContainer = shadow.getElementById('attachment-container');
       canvasContainer.innerHTML = ''; // Clear previous content
 
       if (!canvasContainer) {
@@ -417,13 +470,8 @@ async function injectObjectViewer() {
       }
       canvasContainer.clientWidth = "100%";
       canvasContainer.clientHeight = "100%";
-      canvasContainer.style.width = `100%`;
-      canvasContainer.style.height = `100%`;
 
-      const width = canvasContainer.clientWidth * scale;
       const height = canvasContainer.clientHeight * scale;
-      // canvasContainer.style.width = `${width}px`;
-      // canvasContainer.style.height = `${height}px`;
 
       const canvas = document.createElement('object');
       canvas.style.width = 'auto';
