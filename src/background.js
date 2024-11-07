@@ -12,6 +12,8 @@ const handleRequest = async (sendResponse, url) => {
 };
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action != "fetchFile")
+    return true;
   const url = request.fileUrl;
   handleRequest(sendResponse, url) // makes sure that the return statement is not being sent before this method is executed
   return true; // Indicates that sendResponse will be called asynchronously

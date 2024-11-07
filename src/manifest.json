@@ -24,5 +24,15 @@
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'self' data:;" 
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "pdf.js", 
+        "pdf.worker.js", 
+        "object_viewer.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
