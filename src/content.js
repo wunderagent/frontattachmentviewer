@@ -1,11 +1,15 @@
 document.addEventListener('click', async function (event) {
+  // Check if download button is clicked within Front App
+  if (event.target.getAttribute('href') === '#icon-downloadCircle') {
+    return;
+  }
 
-  // TODO masto: also include the case where the user clicks anywhere inside Modal
+  // Check if the click event is within the popup
   if (event.target.id === "extension-container" || event.target.closest('#attachment-popup')) {
     return;
   }
 
-  console.debug('Click event detected:', event.target.id);
+  console.debug('Click event detected:', event.target);
   let element = event.target;
 
   // get root attachment element
