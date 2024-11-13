@@ -85,7 +85,7 @@ function createPopup(fileName) {
   // popup header
   const popupHeader = document.createElement('div');
   popupHeader.id = 'popup-header';
-  popupHeader.classList.add('h-16', 'flex', 'items-center', 'w-full');
+  popupHeader.classList.add('h-16', 'flex', 'items-center', 'w-full', 'pointer-events-auto');
 
   // download button
   const button_placeholder = document.createElement('div');
@@ -95,24 +95,24 @@ function createPopup(fileName) {
   downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
 <path d="M5.625 15C5.625 14.5858 5.28921 14.25 4.875 14.25C4.46079 14.25 4.125 14.5858 4.125 15H5.625ZM4.875 16H4.125H4.875ZM19.275 15C19.275 14.5858 18.9392 14.25 18.525 14.25C18.1108 14.25 17.775 14.5858 17.775 15H19.275ZM11.1086 15.5387C10.8539 15.8653 10.9121 16.3366 11.2387 16.5914C11.5653 16.8461 12.0366 16.7879 12.2914 16.4613L11.1086 15.5387ZM16.1914 11.4613C16.4461 11.1347 16.3879 10.6634 16.0613 10.4086C15.7347 10.1539 15.2634 10.2121 15.0086 10.5387L16.1914 11.4613ZM11.1086 16.4613C11.3634 16.7879 11.8347 16.8461 12.1613 16.5914C12.4879 16.3366 12.5461 15.8653 12.2914 15.5387L11.1086 16.4613ZM8.39138 10.5387C8.13662 10.2121 7.66533 10.1539 7.33873 10.4086C7.01212 10.6634 6.95387 11.1347 7.20862 11.4613L8.39138 10.5387ZM10.95 16C10.95 16.4142 11.2858 16.75 11.7 16.75C12.1142 16.75 12.45 16.4142 12.45 16H10.95ZM12.45 5C12.45 4.58579 12.1142 4.25 11.7 4.25C11.2858 4.25 10.95 4.58579 10.95 5H12.45ZM4.125 15V16H5.625V15H4.125ZM4.125 16C4.125 18.0531 5.75257 19.75 7.8 19.75V18.25C6.61657 18.25 5.625 17.2607 5.625 16H4.125ZM7.8 19.75H15.6V18.25H7.8V19.75ZM15.6 19.75C17.6474 19.75 19.275 18.0531 19.275 16H17.775C17.775 17.2607 16.7834 18.25 15.6 18.25V19.75ZM19.275 16V15H17.775V16H19.275ZM12.2914 16.4613L16.1914 11.4613L15.0086 10.5387L11.1086 15.5387L12.2914 16.4613ZM12.2914 15.5387L8.39138 10.5387L7.20862 11.4613L11.1086 16.4613L12.2914 15.5387ZM12.45 16V5H10.95V16H12.45Z" fill="#ffffff"/>
 </svg>`;
-  downloadButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none');
+  downloadButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
   button_placeholder.appendChild(downloadButton);
   popupHeader.appendChild(button_placeholder);
 
   // title
   const popupHeaderTitle = document.createElement('p');
   popupHeaderTitle.id = 'popup-header-title';
-  popupHeaderTitle.classList.add('text-xl', 'text-white', 'ml-2', 'flex-grow');
+  popupHeaderTitle.classList.add('text-xl', 'text-white', 'ml-2', 'flex-grow', 'pointer-events-auto');
   popupHeaderTitle.innerText = fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName;
   popupHeader.prepend(popupHeaderTitle);
 
   // close button
   const closeButtonContainer = document.createElement('div');
-  closeButtonContainer.classList.add('flex', 'justify-center', 'items-center');
+  closeButtonContainer.classList.add('flex', 'justify-center', 'items-center', 'pointer-events-auto');
   const closeButton = document.createElement('button');
-  closeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#C4C7C5"></path><path d="M0 0h24v24H0z" fill="none"></path></svg>`;
+  closeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#C4C7C5"></path><path d="M0 0h24v24H0z" fill="none"></path></svg>`;
   closeButton.id = 'closeModal';
-  closeButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none');
+  closeButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
   closeButton.addEventListener('click', () => { 
     const modal = document.getElementById('extension-container');
     if (modal) {
@@ -128,55 +128,55 @@ function createPopup(fileName) {
   // add main container
   const mainContainer = document.createElement('div');
   mainContainer.id = "popup-main";
-  mainContainer.classList.add('h-full', 'w-full', 'flex', 'justify-center', 'items-center', 'p-4', 'overflow-hidden');
+  mainContainer.classList.add('h-full', 'w-full', 'flex', 'justify-center', 'items-center', 'p-4', 'overflow-hidden', 'pointer-events-auto');
   popup.appendChild(mainContainer);
 
 
   // add left arrow container
   const previousArrowContainer = document.createElement('div');
   previousArrowContainer.id = "left-container";
-  previousArrowContainer.classList.add('pointer-events-auto', 'h-full', 'w-20', 'pl-8', 'flex', 'justify-center', 'items-center', 'absolute', 'top-1/2', 'transform', '-translate-y-1/2', 'left-0');
+  previousArrowContainer.classList.add('pointer-events-auto', 'h-fit', 'w-20', 'pl-8', 'flex', 'justify-center', 'items-center', 'absolute', 'top-1/2', 'transform', '-translate-y-1/2', 'left-0', 'pointer-events-auto');
   mainContainer.appendChild(previousArrowContainer);
 
 
   // add attachment container
   const canvasContainer = document.createElement('div');
   canvasContainer.id = "attachment-container";
-  canvasContainer.classList.add('overflow-y-scroll', 'h-full', 'w-fit', 'm-8', 'flex', 'flex-col', 'justify-center', 'items-center');
+  canvasContainer.classList.add('overflow-y-scroll', 'h-full', 'w-fit', 'm-8', 'flex', 'flex-col', 'justify-center', 'items-center', 'pointer-events-auto');
   mainContainer.appendChild(canvasContainer);
 
 
   // add right arrow container
   const nextArrowContainer = document.createElement('div');
   nextArrowContainer.id = "right-container";
-  nextArrowContainer.classList.add('pointer-events-auto', 'h-full', 'w-20', 'pr-8', 'flex', 'justify-center', 'items-center', 'absolute', 'top-1/2', 'transform', '-translate-y-1/2', 'right-0');
+  nextArrowContainer.classList.add('pointer-events-auto', 'h-fit', 'w-20', 'pr-8', 'flex', 'justify-center', 'items-center', 'absolute', 'top-1/2', 'transform', '-translate-y-1/2', 'right-0');
   mainContainer.appendChild(nextArrowContainer);
 
   // zoom controls
   const controls = document.createElement("div");
   controls.id = "zoom-controls";
-  controls.classList.add('flex', 'justify-center', 'items-center', 'mb-4', 'p-1', 'w-fit', 'rounded-full', 'bg-black', 'bg-opacity-90', 'bg-scroll', 'absolute', 'bottom-2.5', 'left-1/2', 'transform', '-translate-x-1/2');
+  controls.classList.add('flex', 'justify-center', 'items-center', 'mb-4', 'p-1', 'w-fit', 'rounded-full', 'bg-black', 'bg-opacity-90', 'bg-scroll', 'absolute', 'bottom-2.5', 'left-1/2', 'transform', '-translate-x-1/2', 'pointer-events-auto');
   const button_zoom_in = document.createElement("button");
   button_zoom_in.id = "zoom-in";
   button_zoom_in.style.pointerEvents = 'auto';
   button_zoom_in.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M4 12H20M12 4V20" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
-  button_zoom_in.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'btn', 'btn-circle', 'border-none');
+  button_zoom_in.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'btn', 'btn-circle', 'border-none', 'pointer-events-auto');
   const button_zoom_out = document.createElement("button");
   button_zoom_out.id = "zoom-out";
   button_zoom_out.style.pointerEvents = 'auto';
   button_zoom_out.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
   <g id="Complete"><g id="minus"><line fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="4" x2="20" y1="12" y2="12" /></g></g>
 </svg>`;
-  button_zoom_out.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'btn', 'btn-circle', 'border-none');
+  button_zoom_out.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'btn', 'btn-circle', 'border-none', 'pointer-events-auto');
   const button_zoom_reset = document.createElement("button");
   button_zoom_reset.id = "zoom-reset";
   button_zoom_reset.style.pointerEvents = 'auto';
   button_zoom_reset.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M15.8053 15.8013L21 21M10.5 7.5V13.5M7.5 10.5H13.5M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
-  button_zoom_reset.classList.add('text-white', 'mx-4', 'text-lg', 'h-8', 'w-8');
+  button_zoom_reset.classList.add('text-white', 'mx-4', 'text-lg', 'h-8', 'w-8', 'pointer-events-auto');
 
   controls.appendChild(button_zoom_out);
   controls.appendChild(button_zoom_reset);
@@ -240,11 +240,9 @@ function addMultiAttachmentButtonsAndLogic(attachmentElements, element, modal) {
     }
 
     const url = "https://app.frontapp.com" + newUrl
-    if (document.body.contains(modal)) {
-      adjustDownloadButton(fileName, url);
-      injectFileToModal(url, mimeType);
-      console.debug('New file injected into modal');
-    }
+    adjustDownloadButton(fileName, url);
+    injectFileToModal(url, mimeType);
+    console.debug('New file injected into modal');
     currentIndex = newIndex;
   };
 
@@ -432,6 +430,7 @@ async function injectObjectViewer() {
       if (event.detail.action
         && event.detail.action == "injectPopup"
         && event.detail.data) {
+        console.debug("Object URL:", event.detail.data);
         currentObjectAttachment = event.detail.data;
         currentMimeType = event.detail.mimeType;
         loadAttachment();
