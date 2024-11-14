@@ -43,7 +43,7 @@ document.addEventListener('click', async function (event) {
   container.classList.add('layer');
   container.style.pointerEvents = 'auto';
   container.style.backgroundColor = 'rgba(0,0,0,0.9)';
-  
+
 
   // Attach a shadow DOM to the container
   shadow = container.attachShadow({ mode: 'open' });
@@ -68,7 +68,7 @@ document.addEventListener('click', async function (event) {
       await injectObjectViewer();
       break;
   }
-  
+
   const attachments = findAttachments();
   if (attachments.length > 1)
     addMultiAttachmentButtonsAndLogic(attachments, element, popup);
@@ -79,6 +79,7 @@ document.addEventListener('click', async function (event) {
 }, true);
 
 let shadow = null;
+let scale = 1.0;
 
 function createPopup(fileName) {
   const popup = document.createElement('div');
@@ -115,14 +116,9 @@ function createPopup(fileName) {
   closeButtonContainer.classList.add('flex', 'justify-center', 'items-center', 'pointer-events-auto');
   const closeButton = document.createElement('button');
   closeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#C4C7C5"></path><path d="M0 0h24v24H0z" fill="none"></path></svg>`;
-  closeButton.id = 'closeModal';
+  closeButton.id = 'closeModalButton';
   closeButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
-  closeButton.addEventListener('click', () => { 
-    const modal = document.getElementById('extension-container');
-    if (modal) {
-      modal.remove();
-    }
-  });
+  closeButton.addEventListener('click', removeModal);
   closeButtonContainer.appendChild(closeButton);
   popupHeader.prepend(closeButtonContainer);
 
@@ -189,6 +185,16 @@ function createPopup(fileName) {
   return popup;
 }
 
+const removeModal = () => {
+  const modal = document.getElementById('extension-container');
+  if (modal) {
+    const closeButton = shadow.getElementById('closeModalButton');
+    closeButton.removeEventListener('click', removeModal);
+    removeCurrentInjectedContent();
+    modal.remove();
+  }
+};
+
 function adjustDownloadButton(fileName, url, mimeType) {
   const downloadButton = shadow.getElementById("download-button-placeholder");
   downloadButton.onclick = () => {
@@ -250,7 +256,7 @@ function addMultiAttachmentButtonsAndLogic(attachmentElements, element, modal) {
     currentIndex = newIndex;
   };
 
-  
+
   // controls
   const leftArrow = document.createElement("button");
   leftArrow.id = "leftArrow";
@@ -301,6 +307,10 @@ function getMimeType(fileExtension) {
 }
 
 function removeCurrentInjectedContent() {
+  const event = new Event("discard");
+  console.debug("Dispatch 'discard' event");
+  document.dispatchEvent(event);
+
   const currentScript = shadow.getElementById('attachment-viewer-script');
   if (currentScript)
     document.head.removeChild(currentScript);
@@ -309,127 +319,171 @@ function removeCurrentInjectedContent() {
     placeholder.remove();
 }
 
-let pdfDoc = null; 
+let pdfDoc = null;
+const onLoadPdfScript = async () => {
+
+  let pdfjsLib = null;
+
+  function loadPdf() {
+    // Load the PDF and render the first page
+    console.debug("pdfDoc:", pdfDoc);
+    if (!pdfDoc) {
+      return;
+    }
+    const numPages = pdfDoc.numPages;
+    const canvasContainer = shadow.getElementById('attachment-container');
+    canvasContainer.innerHTML = ''; // Clear previous content
+
+    const outputScale = window.devicePixelRatio || 1;
+
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      pdfDoc.getPage(pageNum)
+        .then(page => {
+          const viewport = page.getViewport({ scale: scale });
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.floor(viewport.width * outputScale);
+          canvas.height = Math.floor(viewport.height * outputScale);
+          const context = canvas.getContext('2d');
+          context.scale(outputScale, outputScale);
+
+          const renderContext = {
+            canvasContext: context,
+            viewport: viewport
+          };
+
+          canvasContainer.appendChild(canvas);
+          return page.render(renderContext).promise;
+
+          // page.render(renderContext).promise.then(() => {
+          //   const img = document.createElement('img');
+          //   img.src = canvas.toDataURL();
+          //   img.style.marginBottom = '1rem';
+          //   img.style.width = `${viewport.width}px`;
+          //   img.style.height = `${viewport.height}px`;
+          //   canvasContainer.appendChild(img);});
+        })
+        .then(() => {
+          console.debug(`Page ${pageNum} rendered`);
+        })
+        .catch(error => {
+          console.error("Error loading PDF:", error);
+        });
+    }
+  }
+
+  function handleCustomPdfEvent(event) {
+    console.debug("Received message in popup.js:", event);
+    if (event?.detail?.action
+      && event.detail.action == "injectPopup"
+      && event?.detail?.data) {
+      console.debug("PDF URL:", event.detail.data);
+      pdfjsLib.getDocument({
+        url: event.detail.data,
+        disableRange: true // Ensures entire document loads in one request
+        // rangeChunkSize: 65536 // Adjust chunk size if needed
+      }).promise
+        .then(pdf => pdfDoc = pdf)
+        .then(() => {
+          loadPdf();
+        });
+    }
+  }
+
+  async function initialize() {
+    scale = 1.0;
+    pdfjsLib = await import(chrome.runtime.getURL("pdf.js"));
+
+    // Configure PDF.js to use the local worker script
+    pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
+    console.debug("worker imported");
+
+    document.addEventListener('discard', discard);
+    document.addEventListener("CustomEvent", customPdfHandler);
+    shadow.getElementById('zoom-in').addEventListener('click', zoomInHandler);
+    shadow.getElementById('zoom-out').addEventListener('click', zoomOutHandler);
+    shadow.getElementById('zoom-reset').addEventListener('click', zoomResetHandler);
+    console.debug("PDF script initialized");
+  }
+
+  function discard() {
+
+    document.removeEventListener('discard', discard);
+    document.removeEventListener("CustomEvent", customPdfHandler);
+    shadow.getElementById('zoom-in').removeEventListener('click', zoomInHandler);
+    shadow.getElementById('zoom-out').removeEventListener('click', zoomOutHandler);
+    shadow.getElementById('zoom-reset').removeEventListener('click', zoomResetHandler);
+    if (pdfDoc) {
+      pdfDoc.destroy();
+      pdfDoc = null;
+    }
+    console.debug("PDF script discarded");
+  };
+
+  function zoomIn() {
+    console.debug("Zoom in clicked");
+    scale += 0.1;
+    loadPdf();
+  };
+  
+  function zoomOut() {
+    console.debug("Zoom out clicked");
+    scale = Math.max(0.5, scale - 0.1); // minimum zoom level
+    loadPdf();
+  }
+  
+  function zoomReset() {
+    console.debug("Zoom reset clicked");
+    scale = 1;
+    loadPdf();
+  }
+
+  const customPdfHandler = (event) => handleCustomPdfEvent(event);
+  const zoomInHandler = () => zoomIn();
+  const zoomOutHandler = () => zoomOut();
+  const zoomResetHandler = () => zoomReset();
+  
+
+  await initialize();
+};
+
 async function injectPDFViewer() {
   removeCurrentInjectedContent();
   const script = document.createElement("script");
   script.id = "attachment-viewer-script";
   script.src = chrome.runtime.getURL("pdf.js");
   script.type = "module";
-
-  // Set up PDF rendering in the injected script
-  script.onload = async () => {
-    const pdfjsLib = await import(chrome.runtime.getURL("pdf.js"))
-     {
-        console.debug("script loaded");
-        let scale = 1.0;
-
-        document.addEventListener("CustomEvent", async (event) => {
-          console.debug("Received message in popup.js:", event);
-          if (event.detail.action
-            && event.detail.action == "injectPopup"
-            && event.detail.data) {
-            console.debug("PDF URL:", event.detail.data);
-            pdfDoc = await (pdfjsLib.getDocument({ 
-              url: event.detail.data,
-              disableRange: true // Ensures entire document loads in one request
-              // rangeChunkSize: 65536 // Adjust chunk size if needed
-             }).promise);
-            loadPdf();
-          }
-        });
-
-        shadow.getElementById('zoom-in').addEventListener('click', () => {
-          console.debug("Zoom in clicked");
-          scale += 0.1;
-          loadPdf();
-        });
-
-        shadow.getElementById('zoom-out').addEventListener('click', () => {
-          console.debug("Zoom out clicked");
-          scale = Math.max(0.5, scale - 0.1); // minimum zoom level
-          loadPdf();
-        });
-
-        shadow.getElementById('zoom-reset').addEventListener('click', () => {
-          console.debug("Zoom reset clicked");
-          scale = 1;
-          loadPdf();
-        });
-
-        // Configure PDF.js to use the local worker script
-        pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
-        console.debug("worker imported");
-
-        function loadPdf() {
-          // Load the PDF and render the first page
-          console.debug("pdfDoc:", pdfDoc);
-              const numPages = pdfDoc.numPages;
-              const canvasContainer = shadow.getElementById('attachment-container');
-              canvasContainer.innerHTML = ''; // Clear previous content
-
-              const outputScale = window.devicePixelRatio || 1;
-
-              for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-                pdfDoc.getPage(pageNum)
-                  .then(page => {
-                    const viewport = page.getViewport({ scale: scale });
-                    const canvas = document.createElement('canvas');
-                    canvas.width = Math.floor(viewport.width * outputScale);
-                    canvas.height = Math.floor(viewport.height * outputScale);
-                    const context = canvas.getContext('2d');
-                    context.scale(outputScale, outputScale);
-
-                    const renderContext = {
-                      canvasContext: context,
-                      viewport: viewport
-                    };
-
-                    canvasContainer.appendChild(canvas);
-                    return page.render(renderContext).promise;
-
-                    // page.render(renderContext).promise.then(() => {
-
-                    //   const img = document.createElement('img');
-                    //   img.src = canvas.toDataURL();
-                    //   img.style.marginBottom = '1rem';
-                    //   img.style.width = `${viewport.width}px`;
-                    //   img.style.height = `${viewport.height}px`;
-  
-                    //   canvasContainer.appendChild(img);});
-                  })
-                  .then(() => {
-                    console.debug(`Page ${pageNum} rendered`);
-                  })
-                  .catch(error => {
-                    console.error("Error loading PDF:", error);
-                  });
-              }
-        }
-      };
-  };
-
-  // Append the script to the DOM to load it
+  script.onload = onLoadPdfScript;
   document.head.appendChild(script);
   return await new Promise(resolve => setTimeout(resolve, 200));
 }
 
 let currentObjectAttachment = null;
 let currentMimeType = null;
-async function injectObjectViewer() {
-  removeCurrentInjectedContent();
 
-  const script = document.createElement("script");
-  script.src = chrome.runtime.getURL("object_viewer.js");
-  script.id = "attachment-viewer-script";
-  script.type = "module";
+const onLoadObjectViewerScript = async () => {
 
-  // Set up Object rendering in the injected script
-  script.onload = () => {
-    console.debug("script loaded");
-    let scale = 1.0;
+  async function initialize() {
+    scale = 1.0;
+    document.addEventListener("discard", discard);
+    document.addEventListener("CustomEvent", customAttachmentHandler);
+    shadow.getElementById('zoom-in').addEventListener('click', zoomInHandler);
+    shadow.getElementById('zoom-out').addEventListener('click', zoomOutHandler);
+    shadow.getElementById('zoom-reset').addEventListener('click', zoomResetHandler);
+    console.debug("script initialized");
+  }
 
-    document.addEventListener("CustomEvent", (event) => {
+  function discard() {
+    document.removeEventListener("discard", discard);
+    document.removeEventListener("CustomEvent", customAttachmentHandler);
+    shadow.getElementById('zoom-in').removeEventListener('click', zoomInHandler);
+    shadow.getElementById('zoom-out').removeEventListener('click', zoomOutHandler);
+    shadow.getElementById('zoom-reset').removeEventListener('click', zoomResetHandler);
+    currentObjectAttachment = null;
+    currentMimeType = null;
+  }
+
+  function handleCustomAttachmentEvent() {
+    return (event) => {
       console.debug("Received message in popup.js:", event);
       if (event.detail.action
         && event.detail.action == "injectPopup"
@@ -439,52 +493,66 @@ async function injectObjectViewer() {
         currentMimeType = event.detail.mimeType;
         loadAttachment();
       }
-    });
+    };
+  }
 
-    shadow.getElementById('zoom-in').addEventListener('click', () => {
-      console.debug("Zoom in clicked");
-      scale += 0.1;
-      loadAttachment();
-    });
+  function loadAttachment() {
+    console.debug("Loading", currentObjectAttachment, currentMimeType);
+    const canvasContainer = shadow.getElementById('attachment-container');
+    canvasContainer.innerHTML = ''; // Clear previous content
 
-    shadow.getElementById('zoom-out').addEventListener('click', () => {
-      console.debug("Zoom out clicked");
-      scale = Math.max(0.5, scale - 0.1); // minimum zoom level
-      loadAttachment();
-    });
-
-    shadow.getElementById('zoom-reset').addEventListener('click', () => {
-      console.debug("Zoom reset clicked");
-      scale = 1;
-      loadAttachment();
-    });
-
-    // Configure PDF.js to use the local worker script
-    console.debug("worker imported");
-
-    function loadAttachment() {
-      console.debug("Loading", currentObjectAttachment, currentMimeType);
-      const canvasContainer = shadow.getElementById('attachment-container');
-      canvasContainer.innerHTML = ''; // Clear previous content
-
-      if (!canvasContainer) {
-        console.debug(`Canvas not found`,);
-        return;
-      }
-      canvasContainer.clientWidth = "100%";
-      canvasContainer.clientHeight = "100%";
-
-      const height = canvasContainer.clientHeight * scale;
-
-      const canvas = document.createElement('object');
-      canvas.style.width = 'auto';
-      canvas.style.height = `${height}px`;
-      canvas.data = currentObjectAttachment;
-      canvas.type = currentMimeType;
-      canvasContainer.appendChild(canvas);
-
+    if (!canvasContainer) {
+      console.debug(`Canvas not found`);
+      return;
     }
+    canvasContainer.clientWidth = "100%";
+    canvasContainer.clientHeight = "100%";
+
+    const height = canvasContainer.clientHeight * scale;
+
+    const canvas = document.createElement('object');
+    canvas.style.width = 'auto';
+    canvas.style.height = `${height}px`;
+    canvas.data = currentObjectAttachment;
+    canvas.type = currentMimeType;
+    canvasContainer.appendChild(canvas);
+  }
+
+  const customAttachmentHandler = handleCustomAttachmentEvent();
+  const zoomInHandler = () => zoomIn();
+  const zoomOutHandler = () => zoomOut();
+  const zoomResetHandler = () => zoomReset();
+
+  function zoomIn() {
+    console.debug("Zoom in clicked");
+    scale += 0.1;
+    loadAttachment();
   };
+  
+  function zoomOut() {
+    console.debug("Zoom out clicked");
+    scale = Math.max(0.5, scale - 0.1); // minimum zoom level
+    loadAttachment();
+  }
+  
+  function zoomReset() {
+    console.debug("Zoom reset clicked");
+    scale = 1;
+    loadAttachment();
+  }
+
+  await initialize();
+}
+
+async function injectObjectViewer() {
+  removeCurrentInjectedContent();
+  const script = document.createElement("script");
+  script.src = chrome.runtime.getURL("object_viewer.js");
+  script.id = "attachment-viewer-script";
+  script.type = "module";
+
+  // Set up Object rendering in the injected script
+  script.onload = onLoadObjectViewerScript;
 
   // Append the script to the DOM to load it
   document.head.appendChild(script);
