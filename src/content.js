@@ -1,4 +1,12 @@
-document.addEventListener('click', async function (event) {
+let shadow = null;
+let scale = 1.0;
+let pdfUrl = null;
+let currentObjectAttachment = null;
+let currentMimeType = null;
+
+const handleKeyPress = (event) => handleHeyPressGlobal(event);
+
+const handleClick = async function (event) {
   // Check if download button is clicked within Front App
   if (event.target.getAttribute('href') === '#icon-downloadCircle') {
     return;
@@ -75,11 +83,7 @@ document.addEventListener('click', async function (event) {
   adjustDownloadButton(fileName, url);
   injectFileToModal(url, mimeType);
   console.debug('File injected into modal');
-
-}, true);
-
-let shadow = null;
-let scale = 1.0;
+}
 
 function createPopup(fileName) {
   const popup = document.createElement('div');
@@ -190,6 +194,7 @@ const removeModal = () => {
   if (modal) {
     const closeButton = shadow.getElementById('closeModalButton');
     closeButton.removeEventListener('click', removeModal);
+    document.removeEventListener('keydown', handleKeyPress);
     removeCurrentInjectedContent();
     modal.remove();
   }
@@ -314,7 +319,6 @@ function removeCurrentInjectedContent() {
     placeholder.remove();
 }
 
-let pdfUrl = null;
 const onLoadPdfScript = async () => {
 
   let pdfjsLib = null;
@@ -339,7 +343,7 @@ const onLoadPdfScript = async () => {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     const context = canvas.getContext('2d');
- 
+
     await page.render({ canvasContext: context, viewport: viewport }).promise
 
     // Force reflow to update the layout
@@ -356,8 +360,8 @@ const onLoadPdfScript = async () => {
   const loadVisiblePagesDebounced = () => {
     clearTimeout(renderTimeout);
     renderTimeout = setTimeout(() => {
-        // Call the function to load visible pages
-        loadVisiblePages();
+      // Call the function to load visible pages
+      loadVisiblePages();
     }, 200); // Adjust debounce time as needed
   }
 
@@ -478,8 +482,6 @@ async function injectPDFViewer() {
   return await new Promise(resolve => setTimeout(resolve, 200));
 }
 
-let currentObjectAttachment = null;
-let currentMimeType = null;
 
 const onLoadObjectViewerScript = async () => {
 
@@ -586,3 +588,6 @@ function injectFileToModal(url, mimeType) {
   console.debug("Dispatch event");
   document.dispatchEvent(event);
 }
+
+document.addEventListener('click', handleClick, true);
+document.addEventListener('keydown', handleKeyPress, true);
