@@ -108,7 +108,7 @@ function createPopup(fileName) {
   const popupHeaderTitle = document.createElement('p');
   popupHeaderTitle.id = 'popup-header-title';
   popupHeaderTitle.classList.add('text-xl', 'text-white', 'ml-2', 'flex-grow', 'pointer-events-auto');
-  popupHeaderTitle.innerText = fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName;
+  popupHeaderTitle.innerText = fileName;
   popupHeader.prepend(popupHeaderTitle);
 
   // close button
@@ -233,7 +233,7 @@ function addMultiAttachmentButtonsAndLogic(attachmentElements, element, modal) {
     const mimeType = getMimeType(fileName?.split('.')?.pop() || null);
 
     const title = shadow.getElementById('popup-header-title');
-    title.innerText = fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName
+    title.innerText = fileName
 
     switch (mimeType) {
       case 'application/pdf':
