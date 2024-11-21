@@ -128,7 +128,7 @@ function createPopup(fileName) {
   // add main container
   const mainContainer = document.createElement('div');
   mainContainer.id = "popup-main";
-  mainContainer.classList.add('h-full', 'w-full', 'flex', 'justify-center', 'items-center', 'p-4', 'overflow-hidden', 'pointer-events-auto');
+  mainContainer.classList.add('h-full', 'w-full', 'flex', 'justify-center', 'p-4', 'overflow-hidden', 'pointer-events-auto');
   popup.appendChild(mainContainer);
 
 
@@ -142,7 +142,7 @@ function createPopup(fileName) {
   // add attachment container
   const canvasContainer = document.createElement('div');
   canvasContainer.id = "attachment-container";
-  canvasContainer.classList.add('overflow-y-scroll', 'h-full', 'w-fit', 'm-8', 'flex', 'flex-col', 'justify-center', 'items-center', 'pointer-events-auto');
+  canvasContainer.classList.add('overflow-y-auto', 'h-full', 'w-fit', 'flex', 'flex-col', 'justify-start', 'items-center', 'pointer-events-auto');
   mainContainer.appendChild(canvasContainer);
 
 
@@ -319,56 +319,88 @@ function removeCurrentInjectedContent() {
     placeholder.remove();
 }
 
-let pdfDoc = null;
+let pdfUrl = null;
 const onLoadPdfScript = async () => {
 
   let pdfjsLib = null;
-
-  function loadPdf() {
-    // Load the PDF and render the first page
-    console.debug("pdfDoc:", pdfDoc);
-    if (!pdfDoc) {
+  let container = null;
+  const getPageId = (pageNum) => `page-${pageNum}`;
+  // Function to render a single page
+  async function renderPage(pageNum) {
+    const page = await pdfUrl.getPage(pageNum)
+    const pageId = getPageId(pageNum);
+    if (shadow.getElementById(pageId)) {
+      console.debug(`Page ${pageNum} already rendered`);
       return;
     }
-    const numPages = pdfDoc.numPages;
-    const canvasContainer = shadow.getElementById('attachment-container');
-    canvasContainer.innerHTML = ''; // Clear previous content
 
-    const outputScale = window.devicePixelRatio || 1;
+    const canvas = document.createElement('canvas');
+    canvas.id = pageId;
+    canvas.classList.add('mb-1');
+    container.appendChild(canvas);
 
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      pdfDoc.getPage(pageNum)
-        .then(page => {
-          const viewport = page.getViewport({ scale: scale });
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.floor(viewport.width * outputScale);
-          canvas.height = Math.floor(viewport.height * outputScale);
-          const context = canvas.getContext('2d');
-          context.scale(outputScale, outputScale);
+    const viewport = page.getViewport({ scale: scale });
+    container.style.height = 'auto';
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const context = canvas.getContext('2d');
+ 
+    await page.render({ canvasContext: context, viewport: viewport }).promise
 
-          const renderContext = {
-            canvasContext: context,
-            viewport: viewport
-          };
+    // Force reflow to update the layout
+    // container.style.height = `${container.scrollHeight}px`;
+    container.offsetHeight; // Trigger reflow
 
-          canvasContainer.appendChild(canvas);
-          return page.render(renderContext).promise;
+    // Ensure scroll position stays at the top
+    // container.scrollTop = 0;
+    console.log(`${pageId} rendered`);
+  }
+  let renderTimeout;
 
-          // page.render(renderContext).promise.then(() => {
-          //   const img = document.createElement('img');
-          //   img.src = canvas.toDataURL();
-          //   img.style.marginBottom = '1rem';
-          //   img.style.width = `${viewport.width}px`;
-          //   img.style.height = `${viewport.height}px`;
-          //   canvasContainer.appendChild(img);});
-        })
-        .then(() => {
-          console.debug(`Page ${pageNum} rendered`);
-        })
-        .catch(error => {
-          console.error("Error loading PDF:", error);
-        });
+  // Lazy load pages based on viewport
+  const loadVisiblePagesDebounced = () => {
+    clearTimeout(renderTimeout);
+    renderTimeout = setTimeout(() => {
+        // Call the function to load visible pages
+        loadVisiblePages();
+    }, 200); // Adjust debounce time as needed
+  }
+
+  // Lazy load pages based on viewport
+  const loadVisiblePages = async () => {
+    container = shadow.getElementById('attachment-container');
+    const pageHeight = container.scrollHeight / pdfUrl.numPages;
+    const scrollTop = container.scrollTop;
+    const visibleStartPage = 1;
+    const visibleEndPage = Math.min(Math.ceil((scrollTop + (2 * pageHeight)) / pageHeight), pdfUrl.numPages);
+
+    const totalPagesToRender = [];
+    for (let i = visibleStartPage; i <= visibleEndPage; i++) {
+      totalPagesToRender.push(i);
     }
+
+    const pagesToRender = totalPagesToRender.filter(pageNum => !shadow.getElementById(getPageId(pageNum)));
+
+    pagesToRender.forEach(await renderPage);
+  }
+
+  function loadPdf() {
+    if (!pdfUrl) {
+      console.debug("PDF URL not set");
+      return;
+    }
+
+    console.debug("Loading PDF:", pdfUrl);
+    pdfjsLib.getDocument({ url: pdfUrl }).promise
+      .then((pdf) => {
+        pdfUrl = pdf;
+        loadVisiblePages();
+        console.debug("PDF loaded");
+      }).then(() => {
+        console.debug("Adding scroll event listener");
+        container.removeEventListener('scroll', loadVisiblePages);
+        container.addEventListener('scroll', loadVisiblePages);
+      })
   }
 
   function handleCustomPdfEvent(event) {
@@ -377,15 +409,8 @@ const onLoadPdfScript = async () => {
       && event.detail.action == "injectPopup"
       && event?.detail?.data) {
       console.debug("PDF URL:", event.detail.data);
-      pdfjsLib.getDocument({
-        url: event.detail.data,
-        disableRange: true // Ensures entire document loads in one request
-        // rangeChunkSize: 65536 // Adjust chunk size if needed
-      }).promise
-        .then(pdf => pdfDoc = pdf)
-        .then(() => {
-          loadPdf();
-        });
+      pdfUrl = event.detail.data;
+      loadPdf();
     }
   }
 
@@ -412,9 +437,11 @@ const onLoadPdfScript = async () => {
     shadow.getElementById('zoom-in').removeEventListener('click', zoomInHandler);
     shadow.getElementById('zoom-out').removeEventListener('click', zoomOutHandler);
     shadow.getElementById('zoom-reset').removeEventListener('click', zoomResetHandler);
-    if (pdfDoc) {
-      pdfDoc.destroy();
-      pdfDoc = null;
+    container.removeEventListener('scroll', loadVisiblePages);
+
+    if (pdfUrl) {
+      pdfUrl.destroy();
+      pdfUrl = null;
     }
     console.debug("PDF script discarded");
   };
@@ -424,13 +451,13 @@ const onLoadPdfScript = async () => {
     scale += 0.1;
     loadPdf();
   };
-  
+
   function zoomOut() {
     console.debug("Zoom out clicked");
     scale = Math.max(0.5, scale - 0.1); // minimum zoom level
     loadPdf();
   }
-  
+
   function zoomReset() {
     console.debug("Zoom reset clicked");
     scale = 1;
@@ -441,7 +468,6 @@ const onLoadPdfScript = async () => {
   const zoomInHandler = () => zoomIn();
   const zoomOutHandler = () => zoomOut();
   const zoomResetHandler = () => zoomReset();
-  
 
   await initialize();
 };
@@ -528,13 +554,13 @@ const onLoadObjectViewerScript = async () => {
     scale += 0.1;
     loadAttachment();
   };
-  
+
   function zoomOut() {
     console.debug("Zoom out clicked");
     scale = Math.max(0.5, scale - 0.1); // minimum zoom level
     loadAttachment();
   }
-  
+
   function zoomReset() {
     console.debug("Zoom reset clicked");
     scale = 1;
