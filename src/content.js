@@ -128,28 +128,28 @@ function createPopup(fileName) {
   // add main container
   const mainContainer = document.createElement('div');
   mainContainer.id = "popup-main";
-  mainContainer.classList.add('h-full', 'w-full', 'flex', 'justify-center', 'p-4', 'overflow-hidden', 'pointer-events-auto');
+  mainContainer.classList.add('h-full', 'w-full', 'flex', 'justify-center', 'overflow-hidden', 'pointer-events-auto');
   popup.appendChild(mainContainer);
 
 
   // add left arrow container
   const previousArrowContainer = document.createElement('div');
   previousArrowContainer.id = "left-container";
-  previousArrowContainer.classList.add('pointer-events-auto', 'h-fit', 'w-20', 'pl-8', 'flex', 'justify-center', 'items-center', 'absolute', 'top-1/2', 'transform', '-translate-y-1/2', 'left-0', 'pointer-events-auto');
+  previousArrowContainer.classList.add('pointer-events-auto', 'h-full', 'w-20', 'pl-8', 'flex', 'justify-center', 'items-center', 'absolute', 'top-1/2', 'transform', '-translate-y-1/2', 'left-0', 'pointer-events-auto');
   mainContainer.appendChild(previousArrowContainer);
 
 
   // add attachment container
   const canvasContainer = document.createElement('div');
   canvasContainer.id = "attachment-container";
-  canvasContainer.classList.add('overflow-y-auto', 'h-full', 'w-fit', 'flex', 'flex-col', 'justify-start', 'items-center', 'pointer-events-auto');
+  canvasContainer.classList.add('overflow-y-auto', 'h-full', 'w-fit', 'p-4', 'flex', 'flex-col', 'justify-start', 'items-center', 'pointer-events-auto');
   mainContainer.appendChild(canvasContainer);
 
 
   // add right arrow container
   const nextArrowContainer = document.createElement('div');
   nextArrowContainer.id = "right-container";
-  nextArrowContainer.classList.add('pointer-events-auto', 'h-fit', 'w-20', 'pr-8', 'flex', 'justify-center', 'items-center', 'absolute', 'top-1/2', 'transform', '-translate-y-1/2', 'right-0');
+  nextArrowContainer.classList.add('pointer-events-auto', 'h-full', 'w-20', 'pr-8', 'flex', 'justify-center', 'items-center', 'absolute', 'top-1/2', 'transform', '-translate-y-1/2', 'right-0');
   mainContainer.appendChild(nextArrowContainer);
 
   // zoom controls
