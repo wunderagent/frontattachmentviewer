@@ -79,7 +79,7 @@ const handleMouseClick = async function (event) {
       break;
   }
 
-  attachments = findAttachments();
+  attachments = findOtherAttachments(element);
   if (attachments.length > 1)
     addMultiAttachmentButtonsAndLogic(element, popup);
   adjustDownloadButton(fileName, url);
@@ -208,9 +208,19 @@ function adjustDownloadButton(fileName, url, mimeType) {
   downloadButton.mimeType = mimeType;
 }
 
-function findAttachments() {
+function findOtherAttachments(currentStyledAttachmentButton) {
   console.debug('Finding attachments');
-  return Array.from(document.querySelectorAll('[class*="attachmentBase__StyledAttachmentButton"]'));
+  let rootAttachmentElement = currentStyledAttachmentButton;
+
+  // get root attachment element
+  while (rootAttachmentElement && Array.from(rootAttachmentElement.classList).filter(data => data.startsWith("messageViewerAttachments__StyledAttachmentsDiv")).length === 0) {
+    rootAttachmentElement = rootAttachmentElement.parentElement;
+  }
+  if (!rootAttachmentElement) {
+    console.debug('No attachments root found, exiting');
+    return []
+  }
+  return Array.from(rootAttachmentElement.querySelectorAll('[class*="attachmentBase__StyledAttachmentButton"]'));
 }
 
 const navigateAttachments = async (attachmentElements, direction) => {
