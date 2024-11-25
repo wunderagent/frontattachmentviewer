@@ -17,7 +17,10 @@
       ],
       "js": [
         "content.js",
-        "scripts/key_handlers.js"
+        "scripts/key_handlers.js",
+        "scripts/pdf_viewer.js",
+        "placeholder.js",
+        "scripts/object_viewer.js"
       ]
     }
   ],
@@ -35,7 +38,7 @@
       "resources": [
         "pdf.js",
         "pdf.worker.js",
-        "object_viewer.js",
+        "placeholder.js",
         "styles/tailwind.css"
       ],
       "matches": [

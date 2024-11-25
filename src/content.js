@@ -82,7 +82,6 @@ const handleClick = async function (event) {
     addMultiAttachmentButtonsAndLogic(attachments, element, popup);
   adjustDownloadButton(fileName, url);
   injectFileToModal(url, mimeType);
-  console.debug('File injected into modal');
 }
 
 function createPopup(fileName) {
@@ -319,158 +318,6 @@ function removeCurrentInjectedContent() {
     placeholder.remove();
 }
 
-const onLoadPdfScript = async () => {
-
-  let pdfjsLib = null;
-  let container = null;
-  const getPageId = (pageNum) => `page-${pageNum}`;
-  // Function to render a single page
-  async function renderPage(pageNum) {
-    const page = await pdfUrl.getPage(pageNum)
-    const pageId = getPageId(pageNum);
-    if (shadow.getElementById(pageId)) {
-      console.debug(`Page ${pageNum} already rendered`);
-      return;
-    }
-
-    const canvas = document.createElement('canvas');
-    canvas.id = pageId;
-    canvas.classList.add('mb-1');
-    container.appendChild(canvas);
-
-    const viewport = page.getViewport({ scale: scale });
-    container.style.height = 'auto';
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const context = canvas.getContext('2d');
-
-    await page.render({ canvasContext: context, viewport: viewport }).promise
-
-    // Force reflow to update the layout
-    // container.style.height = `${container.scrollHeight}px`;
-    container.offsetHeight; // Trigger reflow
-
-    // Ensure scroll position stays at the top
-    // container.scrollTop = 0;
-    console.log(`${pageId} rendered`);
-  }
-  let renderTimeout;
-
-  // Lazy load pages based on viewport
-  const loadVisiblePagesDebounced = () => {
-    clearTimeout(renderTimeout);
-    renderTimeout = setTimeout(() => {
-      // Call the function to load visible pages
-      loadVisiblePages();
-    }, 200); // Adjust debounce time as needed
-  }
-
-  // Lazy load pages based on viewport
-  const loadVisiblePages = async () => {
-    container = shadow.getElementById('attachment-container');
-    const pageHeight = container.scrollHeight / pdfUrl.numPages;
-    const scrollTop = container.scrollTop;
-    const visibleStartPage = 1;
-    const visibleEndPage = Math.min(Math.ceil((scrollTop + (2 * pageHeight)) / pageHeight), pdfUrl.numPages);
-
-    const totalPagesToRender = [];
-    for (let i = visibleStartPage; i <= visibleEndPage; i++) {
-      totalPagesToRender.push(i);
-    }
-
-    const pagesToRender = totalPagesToRender.filter(pageNum => !shadow.getElementById(getPageId(pageNum)));
-
-    pagesToRender.forEach(await renderPage);
-  }
-
-  function loadPdf() {
-    if (!pdfUrl) {
-      console.debug("PDF URL not set");
-      return;
-    }
-
-    console.debug("Loading PDF:", pdfUrl);
-    pdfjsLib.getDocument({ url: pdfUrl }).promise
-      .then((pdf) => {
-        pdfUrl = pdf;
-        loadVisiblePages();
-        console.debug("PDF loaded");
-      }).then(() => {
-        console.debug("Adding scroll event listener");
-        container.removeEventListener('scroll', loadVisiblePages);
-        container.addEventListener('scroll', loadVisiblePages);
-      })
-  }
-
-  function handleCustomPdfEvent(event) {
-    console.debug("Received message in popup.js:", event);
-    if (event?.detail?.action
-      && event.detail.action == "injectPopup"
-      && event?.detail?.data) {
-      console.debug("PDF URL:", event.detail.data);
-      pdfUrl = event.detail.data;
-      loadPdf();
-    }
-  }
-
-  async function initialize() {
-    scale = 1.0;
-    pdfjsLib = await import(chrome.runtime.getURL("pdf.js"));
-
-    // Configure PDF.js to use the local worker script
-    pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
-    console.debug("worker imported");
-
-    document.addEventListener('discard', discard);
-    document.addEventListener("CustomEvent", customPdfHandler);
-    shadow.getElementById('zoom-in').addEventListener('click', zoomInHandler);
-    shadow.getElementById('zoom-out').addEventListener('click', zoomOutHandler);
-    shadow.getElementById('zoom-reset').addEventListener('click', zoomResetHandler);
-    console.debug("PDF script initialized");
-  }
-
-  function discard() {
-
-    document.removeEventListener('discard', discard);
-    document.removeEventListener("CustomEvent", customPdfHandler);
-    shadow.getElementById('zoom-in').removeEventListener('click', zoomInHandler);
-    shadow.getElementById('zoom-out').removeEventListener('click', zoomOutHandler);
-    shadow.getElementById('zoom-reset').removeEventListener('click', zoomResetHandler);
-    container.removeEventListener('scroll', loadVisiblePages);
-
-    if (pdfUrl) {
-      pdfUrl.destroy();
-      pdfUrl = null;
-    }
-    console.debug("PDF script discarded");
-  };
-
-  function zoomIn() {
-    console.debug("Zoom in clicked");
-    scale += 0.1;
-    loadPdf();
-  };
-
-  function zoomOut() {
-    console.debug("Zoom out clicked");
-    scale = Math.max(0.5, scale - 0.1); // minimum zoom level
-    loadPdf();
-  }
-
-  function zoomReset() {
-    console.debug("Zoom reset clicked");
-    scale = 1;
-    loadPdf();
-  }
-
-  const customPdfHandler = (event) => handleCustomPdfEvent(event);
-  const zoomInHandler = () => zoomIn();
-  const zoomOutHandler = () => zoomOut();
-  const zoomResetHandler = () => zoomReset();
-
-  await initialize();
-};
-
 async function injectPDFViewer() {
   removeCurrentInjectedContent();
   const script = document.createElement("script");
@@ -482,102 +329,14 @@ async function injectPDFViewer() {
   return await new Promise(resolve => setTimeout(resolve, 200));
 }
 
-
-const onLoadObjectViewerScript = async () => {
-
-  async function initialize() {
-    scale = 1.0;
-    document.addEventListener("discard", discard);
-    document.addEventListener("CustomEvent", customAttachmentHandler);
-    shadow.getElementById('zoom-in').addEventListener('click', zoomInHandler);
-    shadow.getElementById('zoom-out').addEventListener('click', zoomOutHandler);
-    shadow.getElementById('zoom-reset').addEventListener('click', zoomResetHandler);
-    console.debug("script initialized");
-  }
-
-  function discard() {
-    document.removeEventListener("discard", discard);
-    document.removeEventListener("CustomEvent", customAttachmentHandler);
-    shadow.getElementById('zoom-in').removeEventListener('click', zoomInHandler);
-    shadow.getElementById('zoom-out').removeEventListener('click', zoomOutHandler);
-    shadow.getElementById('zoom-reset').removeEventListener('click', zoomResetHandler);
-    currentObjectAttachment = null;
-    currentMimeType = null;
-  }
-
-  function handleCustomAttachmentEvent() {
-    return (event) => {
-      console.debug("Received message in popup.js:", event);
-      if (event.detail.action
-        && event.detail.action == "injectPopup"
-        && event.detail.data) {
-        console.debug("Object URL:", event.detail.data);
-        currentObjectAttachment = event.detail.data;
-        currentMimeType = event.detail.mimeType;
-        loadAttachment();
-      }
-    };
-  }
-
-  function loadAttachment() {
-    console.debug("Loading", currentObjectAttachment, currentMimeType);
-    const canvasContainer = shadow.getElementById('attachment-container');
-    canvasContainer.innerHTML = ''; // Clear previous content
-
-    if (!canvasContainer) {
-      console.debug(`Canvas not found`);
-      return;
-    }
-    canvasContainer.clientWidth = "100%";
-    canvasContainer.clientHeight = "100%";
-
-    const height = canvasContainer.clientHeight * scale;
-
-    const canvas = document.createElement('object');
-    canvas.style.width = 'auto';
-    canvas.style.height = `${height}px`;
-    canvas.data = currentObjectAttachment;
-    canvas.type = currentMimeType;
-    canvasContainer.appendChild(canvas);
-  }
-
-  const customAttachmentHandler = handleCustomAttachmentEvent();
-  const zoomInHandler = () => zoomIn();
-  const zoomOutHandler = () => zoomOut();
-  const zoomResetHandler = () => zoomReset();
-
-  function zoomIn() {
-    console.debug("Zoom in clicked");
-    scale += 0.1;
-    loadAttachment();
-  };
-
-  function zoomOut() {
-    console.debug("Zoom out clicked");
-    scale = Math.max(0.5, scale - 0.1); // minimum zoom level
-    loadAttachment();
-  }
-
-  function zoomReset() {
-    console.debug("Zoom reset clicked");
-    scale = 1;
-    loadAttachment();
-  }
-
-  await initialize();
-}
-
 async function injectObjectViewer() {
   removeCurrentInjectedContent();
   const script = document.createElement("script");
-  script.src = chrome.runtime.getURL("object_viewer.js");
   script.id = "attachment-viewer-script";
+  script.src = chrome.runtime.getURL("placeholder.js");
+  console.debug('Placeholder script src:', script.src);
   script.type = "module";
-
-  // Set up Object rendering in the injected script
   script.onload = onLoadObjectViewerScript;
-
-  // Append the script to the DOM to load it
   document.head.appendChild(script);
   return await new Promise(resolve => setTimeout(resolve, 200));
 }
@@ -585,9 +344,9 @@ async function injectObjectViewer() {
 // Convert Base64 to Uint8Array
 function injectFileToModal(url, mimeType) {
   const event = new CustomEvent("CustomEvent", { detail: { action: "injectPopup", data: url, mimeType: mimeType } });
-  console.debug("Dispatch event");
+  console.debug("Dispatch 'injectPopup' event");
   document.dispatchEvent(event);
 }
 
-document.addEventListener('click', handleClick, true);
-document.addEventListener('keydown', handleKeyPress, true);
+document.addEventListener('click', handleClick, true); // the boolean at the end is for capture phase: means it will be handled before other elements otherwise Front App will handle it first
+document.addEventListener('keydown', handleKeyPress, true); // the boolean at the end is for capture phase: means it will be handled before other elements otherwise Front App will handle it first
