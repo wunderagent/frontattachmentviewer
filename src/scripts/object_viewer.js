@@ -3,7 +3,7 @@ window.onLoadObjectViewerScript = async () => {
       console.log('Loading object viewer script');
       scale = 1.0;
       document.addEventListener("discard", discard);
-      document.addEventListener("CustomEvent", customAttachmentHandler);
+      document.addEventListener("CustomEvent", customEventHandler);
       shadow.getElementById('zoom-in').addEventListener('click', zoomInHandler);
       shadow.getElementById('zoom-out').addEventListener('click', zoomOutHandler);
       shadow.getElementById('zoom-reset').addEventListener('click', zoomResetHandler);
@@ -13,7 +13,7 @@ window.onLoadObjectViewerScript = async () => {
     function discard() {
     console.log('Loading object viewer script');
       document.removeEventListener("discard", discard);
-      document.removeEventListener("CustomEvent", customAttachmentHandler);
+      document.removeEventListener("CustomEvent", customEventHandler);
       shadow.getElementById('zoom-in').removeEventListener('click', zoomInHandler);
       shadow.getElementById('zoom-out').removeEventListener('click', zoomOutHandler);
       shadow.getElementById('zoom-reset').removeEventListener('click', zoomResetHandler);
@@ -57,11 +57,6 @@ window.onLoadObjectViewerScript = async () => {
       console.debug('File injected into modal');
     }
   
-    const customAttachmentHandler = (event) => handleCustomAttachmentEvent(event);
-    const zoomInHandler = () => zoomIn();
-    const zoomOutHandler = () => zoomOut();
-    const zoomResetHandler = () => zoomReset();
-  
     function zoomIn() {
       console.debug("Zoom in clicked");
       scale += 0.1;
@@ -79,6 +74,11 @@ window.onLoadObjectViewerScript = async () => {
       scale = 1;
       loadAttachment();
     }
+  
+    const customEventHandler = (event) => handleCustomAttachmentEvent(event);
+    const zoomInHandler = () => zoomIn();
+    const zoomOutHandler = () => zoomOut();
+    const zoomResetHandler = () => zoomReset();
   
     await initialize();
   }

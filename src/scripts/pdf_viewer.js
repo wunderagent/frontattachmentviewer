@@ -92,7 +92,7 @@ window.onLoadPdfScript = async () => {
         console.debug("worker imported");
 
         document.addEventListener('discard', discard);
-        document.addEventListener("CustomEvent", customPdfHandler);
+        document.addEventListener("CustomEvent", customEventHandler);
         shadow.getElementById('zoom-in').addEventListener('click', zoomInHandler);
         shadow.getElementById('zoom-out').addEventListener('click', zoomOutHandler);
         shadow.getElementById('zoom-reset').addEventListener('click', zoomResetHandler);
@@ -101,7 +101,7 @@ window.onLoadPdfScript = async () => {
 
     function discard() {
         document.removeEventListener('discard', discard);
-        document.removeEventListener("CustomEvent", customPdfHandler);
+        document.removeEventListener("CustomEvent", customEventHandler);
         shadow.getElementById('zoom-in').removeEventListener('click', zoomInHandler);
         shadow.getElementById('zoom-out').removeEventListener('click', zoomOutHandler);
         shadow.getElementById('zoom-reset').removeEventListener('click', zoomResetHandler);
@@ -132,7 +132,7 @@ window.onLoadPdfScript = async () => {
         loadPdf();
     }
 
-    const customPdfHandler = (event) => handleCustomPdfEvent(event);
+    const customEventHandler = (event) => handleCustomPdfEvent(event);
     const zoomInHandler = () => zoomIn();
     const zoomOutHandler = () => zoomOut();
     const zoomResetHandler = () => zoomReset();

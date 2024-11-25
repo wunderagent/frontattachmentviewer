@@ -1,4 +1,4 @@
-window.handleHeyPressGlobal = (event) => {
+window.handleKeyPressGlobal = (event) => {
     if (!document.getElementById('extension-container')) {
       return;
     }
@@ -16,8 +16,18 @@ window.handleHeyPressGlobal = (event) => {
 
 const handleEscape = () => {
     console.log('ESC key pressed');
+    removeModal();
 }
 
 const handleArrowKeys = (key) => {
     console.log(`${key} key pressed`);
+    
+    switch (key) {
+        case 'ArrowLeft':
+            moveToPreviousAttachment();
+            break;
+        case 'ArrowRight':
+            moveToNextAttachment();
+            break;
+    }
 }

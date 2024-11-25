@@ -3,10 +3,11 @@ let scale = 1.0;
 let pdfUrl = null;
 let currentObjectAttachment = null;
 let currentMimeType = null;
+let attachments;
 
-const handleKeyPress = (event) => handleHeyPressGlobal(event);
+const handleKeyPress = (event) => handleKeyPressGlobal(event);
 
-const handleClick = async function (event) {
+const handleMouseClick = async function (event) {
   // Check if download button is clicked within Front App
   if (event.target.getAttribute('href') === '#icon-downloadCircle') {
     return;
@@ -42,6 +43,7 @@ const handleClick = async function (event) {
   event.stopPropagation();
   event.preventDefault();
   console.debug('Event propagation stopped and default prevented');
+  attachments = [];
 
   url = "https://app.frontapp.com" + url;
   let fileName = element.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim() || null;
@@ -77,9 +79,9 @@ const handleClick = async function (event) {
       break;
   }
 
-  const attachments = findAttachments();
+  attachments = findAttachments();
   if (attachments.length > 1)
-    addMultiAttachmentButtonsAndLogic(attachments, element, popup);
+    addMultiAttachmentButtonsAndLogic(element, popup);
   adjustDownloadButton(fileName, url);
   injectFileToModal(url, mimeType);
 }
@@ -211,50 +213,53 @@ function findAttachments() {
   return Array.from(document.querySelectorAll('[class*="attachmentBase__StyledAttachmentButton"]'));
 }
 
-function addMultiAttachmentButtonsAndLogic(attachmentElements, element, modal) {
-  let currentIndex = attachmentElements.indexOf(element);
-  console.debug('Current attachment index:', currentIndex);
+const navigateAttachments = async (attachmentElements, direction) => {
+  console.debug('Navigating attachments, direction:', direction);
+  let newIndex = currentAttachmentIndex + direction;
+  console.debug('New index calculated:', newIndex);
 
-  const navigateAttachments = async (direction) => {
-    console.debug('Navigating attachments, direction:', direction);
-    let newIndex = currentIndex + direction;
-    console.debug('New index calculated:', newIndex);
+  if (newIndex < 0 || newIndex >= attachmentElements.length) {
+    console.debug('New index out of bounds, exiting');
+    return;
+  }
 
-    if (newIndex < 0 || newIndex >= attachmentElements.length) {
-      console.debug('New index out of bounds, exiting');
-      return;
-    }
+  const newElement = attachmentElements[newIndex];
+  const newUrl = newElement.querySelector('img')
+    ?.getAttribute('src')
+    ?.replace('?action=thumbnail', '?action=view')
+    ?.replace('&action=thumbnail', '&action=view') + '&embedded=true';
 
-    const newElement = attachmentElements[newIndex];
-    const newUrl = newElement.querySelector('img')
-      ?.getAttribute('src')
-      ?.replace('?action=thumbnail', '?action=view')
-      ?.replace('&action=thumbnail', '&action=view') + '&embedded=true';
+  console.debug('New URL:', newUrl);
 
-    console.debug('New URL:', newUrl);
+  const fileName = newElement.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim();
+  const mimeType = getMimeType(fileName?.split('.')?.pop() || null);
 
-    const fileName = newElement.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim();
-    const mimeType = getMimeType(fileName?.split('.')?.pop() || null);
+  const title = shadow.getElementById('popup-header-title');
+  title.innerText = fileName
 
-    const title = shadow.getElementById('popup-header-title');
-    title.innerText = fileName
+  switch (mimeType) {
+    case 'application/pdf':
+      await injectPDFViewer();
+      break;
+    default:
+      await injectObjectViewer();
+      break;
+  }
 
-    switch (mimeType) {
-      case 'application/pdf':
-        await injectPDFViewer();
-        break;
-      default:
-        await injectObjectViewer();
-        break;
-    }
+  const url = "https://app.frontapp.com" + newUrl
+  adjustDownloadButton(fileName, url);
+  injectFileToModal(url, mimeType);
+  console.debug('New file injected into modal');
+  currentAttachmentIndex = newIndex;
+};
 
-    const url = "https://app.frontapp.com" + newUrl
-    adjustDownloadButton(fileName, url);
-    injectFileToModal(url, mimeType);
-    console.debug('New file injected into modal');
-    currentIndex = newIndex;
-  };
+let currentAttachmentIndex;
+const moveToPreviousAttachment = async () => await navigateAttachments(attachments, -1, currentAttachmentIndex);
+const moveToNextAttachment = async () => await navigateAttachments(attachments, 1, currentAttachmentIndex);
 
+function addMultiAttachmentButtonsAndLogic(element) {
+  currentAttachmentIndex = attachments.indexOf(element);
+  console.debug('Current attachment index:', currentAttachmentIndex);
 
   // controls
   const leftArrow = document.createElement("button");
@@ -263,7 +268,7 @@ function addMultiAttachmentButtonsAndLogic(attachmentElements, element, modal) {
 <path fill-rule="evenodd" clip-rule="evenodd" d="M15.7071 4.29289C16.0976 4.68342 16.0976 5.31658 15.7071 5.70711L9.41421 12L15.7071 18.2929C16.0976 18.6834 16.0976 19.3166 15.7071 19.7071C15.3166 20.0976 14.6834 20.0976 14.2929 19.7071L7.29289 12.7071C7.10536 12.5196 7 12.2652 7 12C7 11.7348 7.10536 11.4804 7.29289 11.2929L14.2929 4.29289C14.6834 3.90237 15.3166 3.90237 15.7071 4.29289Z" fill="#ffffff"/>
 </svg>`;
   leftArrow.classList.add('pointer-events-auto', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none');
-  leftArrow.onclick = async () => await navigateAttachments(-1);
+  leftArrow.onclick = moveToPreviousAttachment;
   const leftContainer = shadow.getElementById('left-container');
   leftContainer.appendChild(leftArrow);
 
@@ -273,7 +278,7 @@ function addMultiAttachmentButtonsAndLogic(attachmentElements, element, modal) {
   rightArrow.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path fill-rule="evenodd" clip-rule="evenodd" d="M8.29289 4.29289C8.68342 3.90237 9.31658 3.90237 9.70711 4.29289L16.7071 11.2929C17.0976 11.6834 17.0976 12.3166 16.7071 12.7071L9.70711 19.7071C9.31658 20.0976 8.68342 20.0976 8.29289 19.7071C7.90237 19.3166 7.90237 18.6834 8.29289 18.2929L14.5858 12L8.29289 5.70711C7.90237 5.31658 7.90237 4.68342 8.29289 4.29289Z" fill="#ffffff"/>
 </svg>`;
-  rightArrow.onclick = async () => await navigateAttachments(1);
+  rightArrow.onclick = moveToNextAttachment;
   const rightContainer = shadow.getElementById('right-container');
   rightContainer.appendChild(rightArrow);
   // end controls
@@ -348,5 +353,5 @@ function injectFileToModal(url, mimeType) {
   document.dispatchEvent(event);
 }
 
-document.addEventListener('click', handleClick, true); // the boolean at the end is for capture phase: means it will be handled before other elements otherwise Front App will handle it first
+document.addEventListener('click', handleMouseClick, true); // the boolean at the end is for capture phase: means it will be handled before other elements otherwise Front App will handle it first
 document.addEventListener('keydown', handleKeyPress, true); // the boolean at the end is for capture phase: means it will be handled before other elements otherwise Front App will handle it first
