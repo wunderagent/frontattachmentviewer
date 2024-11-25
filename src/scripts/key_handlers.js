@@ -21,6 +21,9 @@ const handleEscape = () => {
 
 const handleArrowKeys = (key) => {
     console.log(`${key} key pressed`);
+    if (!attachments || attachments.length <= 1) {
+        return;
+    }
     
     switch (key) {
         case 'ArrowLeft':

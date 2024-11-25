@@ -3,7 +3,7 @@ let scale = 1.0;
 let pdfUrl = null;
 let currentObjectAttachment = null;
 let currentMimeType = null;
-let attachments;
+let attachments = [];
 
 const handleKeyPress = (event) => handleKeyPressGlobal(event);
 
