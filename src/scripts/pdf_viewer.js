@@ -11,6 +11,7 @@ window.onLoadPdfScript = async () => {
             console.debug(`Page ${pageNum} already rendered`);
             return;
         }
+        console.debug(`Rendering page ${pageNum}`);
 
         const canvas = document.createElement('canvas');
         canvas.id = pageId;
@@ -24,6 +25,7 @@ window.onLoadPdfScript = async () => {
         const context = canvas.getContext('2d');
 
         await page.render({ canvasContext: context, viewport: viewport }).promise
+        loadedPages.push(pageNum);
 
         // Force reflow to update the layout
         // container.style.height = `${container.scrollHeight}px`;
@@ -33,8 +35,8 @@ window.onLoadPdfScript = async () => {
         // container.scrollTop = 0;
         console.log(`${pageId} rendered`);
     }
-    let renderTimeout;
 
+    let loadedPages = [];
     // Lazy load pages based on viewport
     const loadVisiblePages = async () => {
         container = shadow.getElementById('attachment-container');
@@ -47,10 +49,27 @@ window.onLoadPdfScript = async () => {
         for (let i = visibleStartPage; i <= visibleEndPage; i++) {
             totalPagesToRender.push(i);
         }
-
+        console.debug("Total pages to render:", totalPagesToRender);
         const pagesToRender = totalPagesToRender.filter(pageNum => !shadow.getElementById(getPageId(pageNum)));
-
+        console.debug("Pages to render:", pagesToRender);
         pagesToRender.forEach(await renderPage);
+    }
+
+    const reloadVisiblePages = async () => {
+        for (let pageNum of loadedPages) {
+            const canvas = shadow.getElementById(getPageId(pageNum))
+            const page = await pdfUrl.getPage(pageNum)
+            const viewport = page.getViewport({ scale: scale });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const context = canvas.getContext('2d');
+
+            await page.render({ canvasContext: context, viewport: viewport }).promise
+
+            // Force reflow to update the layout
+            // container.style.height = `${container.scrollHeight}px`;
+            container.offsetHeight; // Trigger reflow
+        }
     }
 
     function loadPdf() {
@@ -117,19 +136,19 @@ window.onLoadPdfScript = async () => {
     function zoomIn() {
         console.debug("Zoom in clicked");
         scale += 0.1;
-        loadPdf();
+        reloadVisiblePages();
     };
 
     function zoomOut() {
         console.debug("Zoom out clicked");
         scale = Math.max(0.5, scale - 0.1); // minimum zoom level
-        loadPdf();
+        reloadVisiblePages();
     }
 
     function zoomReset() {
         console.debug("Zoom reset clicked");
         scale = 1;
-        loadPdf();
+        reloadVisiblePages();
     }
 
     const customEventHandler = (event) => handleCustomPdfEvent(event);
