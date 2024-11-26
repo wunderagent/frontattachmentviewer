@@ -11,6 +11,7 @@ window.onLoadPdfScript = async () => {
             console.debug(`Page ${pageNum} already rendered`);
             return;
         }
+        console.debug(`Rendering page ${pageNum}`);
 
         const canvas = document.createElement('canvas');
         canvas.id = pageId;
@@ -33,7 +34,34 @@ window.onLoadPdfScript = async () => {
         // container.scrollTop = 0;
         console.log(`${pageId} rendered`);
     }
-    let renderTimeout;
+
+    async function rerenderPage(pageNum) {
+        const page = await pdfUrl.getPage(pageNum)
+        const pageId = getPageId(pageNum);
+        console.debug(`Rendering page ${pageNum}`);
+
+        const canvas = document.createElement('canvas');
+        canvas.id = pageId;
+        canvas.classList.add('mb-1');
+        container.appendChild(canvas);
+
+        const viewport = page.getViewport({ scale: scale });
+        container.style.height = 'auto';
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const context = canvas.getContext('2d');
+
+        await page.render({ canvasContext: context, viewport: viewport }).promise
+
+        // Force reflow to update the layout
+        // container.style.height = `${container.scrollHeight}px`;
+        container.offsetHeight; // Trigger reflow
+
+        // Ensure scroll position stays at the top
+        // container.scrollTop = 0;
+        console.log(`${pageId} rendered`);
+    }
+
 
     // Lazy load pages based on viewport
     const loadVisiblePages = async () => {
@@ -47,10 +75,27 @@ window.onLoadPdfScript = async () => {
         for (let i = visibleStartPage; i <= visibleEndPage; i++) {
             totalPagesToRender.push(i);
         }
-
+        console.debug("Total pages to render:", totalPagesToRender);
         const pagesToRender = totalPagesToRender.filter(pageNum => !shadow.getElementById(getPageId(pageNum)));
-
+        console.debug("Pages to render:", pagesToRender);
         pagesToRender.forEach(await renderPage);
+    }
+
+    // Lazy load pages based on viewport
+    const reloadVisiblePages = async () => {
+        container = shadow.getElementById('attachment-container');
+        container.innerHTML = '';
+        const pageHeight = container.scrollHeight / pdfUrl.numPages;
+        const scrollTop = container.scrollTop;
+        const visibleStartPage = 1;
+        const visibleEndPage = Math.min(Math.ceil((scrollTop + (2 * pageHeight)) / pageHeight), pdfUrl.numPages);
+
+        const totalPagesToRender = [];
+        for (let i = visibleStartPage; i <= visibleEndPage; i++) {
+            totalPagesToRender.push(i);
+        }
+        console.debug("Total pages to rerender:", totalPagesToRender);
+        totalPagesToRender.forEach(await rerenderPage);
     }
 
     function loadPdf() {
@@ -117,19 +162,19 @@ window.onLoadPdfScript = async () => {
     function zoomIn() {
         console.debug("Zoom in clicked");
         scale += 0.1;
-        loadPdf();
+        reloadVisiblePages();
     };
 
     function zoomOut() {
         console.debug("Zoom out clicked");
         scale = Math.max(0.5, scale - 0.1); // minimum zoom level
-        loadPdf();
+        reloadVisiblePages();
     }
 
     function zoomReset() {
         console.debug("Zoom reset clicked");
         scale = 1;
-        loadPdf();
+        reloadVisiblePages();
     }
 
     const customEventHandler = (event) => handleCustomPdfEvent(event);
