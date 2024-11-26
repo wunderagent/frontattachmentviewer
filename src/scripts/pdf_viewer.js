@@ -25,6 +25,7 @@ window.onLoadPdfScript = async () => {
         const context = canvas.getContext('2d');
 
         await page.render({ canvasContext: context, viewport: viewport }).promise
+        loadedPages.push(pageNum);
 
         // Force reflow to update the layout
         // container.style.height = `${container.scrollHeight}px`;
@@ -35,34 +36,7 @@ window.onLoadPdfScript = async () => {
         console.log(`${pageId} rendered`);
     }
 
-    async function rerenderPage(pageNum) {
-        const page = await pdfUrl.getPage(pageNum)
-        const pageId = getPageId(pageNum);
-        console.debug(`Rendering page ${pageNum}`);
-
-        const canvas = document.createElement('canvas');
-        canvas.id = pageId;
-        canvas.classList.add('mb-1');
-        container.appendChild(canvas);
-
-        const viewport = page.getViewport({ scale: scale });
-        container.style.height = 'auto';
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        const context = canvas.getContext('2d');
-
-        await page.render({ canvasContext: context, viewport: viewport }).promise
-
-        // Force reflow to update the layout
-        // container.style.height = `${container.scrollHeight}px`;
-        container.offsetHeight; // Trigger reflow
-
-        // Ensure scroll position stays at the top
-        // container.scrollTop = 0;
-        console.log(`${pageId} rendered`);
-    }
-
-
+    let loadedPages = [];
     // Lazy load pages based on viewport
     const loadVisiblePages = async () => {
         container = shadow.getElementById('attachment-container');
@@ -81,21 +55,21 @@ window.onLoadPdfScript = async () => {
         pagesToRender.forEach(await renderPage);
     }
 
-    // Lazy load pages based on viewport
     const reloadVisiblePages = async () => {
-        container = shadow.getElementById('attachment-container');
-        container.innerHTML = '';
-        const pageHeight = container.scrollHeight / pdfUrl.numPages;
-        const scrollTop = container.scrollTop;
-        const visibleStartPage = 1;
-        const visibleEndPage = Math.min(Math.ceil((scrollTop + (2 * pageHeight)) / pageHeight), pdfUrl.numPages);
+        for (let pageNum of loadedPages) {
+            const canvas = shadow.getElementById(getPageId(pageNum))
+            const page = await pdfUrl.getPage(pageNum)
+            const viewport = page.getViewport({ scale: scale });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const context = canvas.getContext('2d');
 
-        const totalPagesToRender = [];
-        for (let i = visibleStartPage; i <= visibleEndPage; i++) {
-            totalPagesToRender.push(i);
+            await page.render({ canvasContext: context, viewport: viewport }).promise
+
+            // Force reflow to update the layout
+            // container.style.height = `${container.scrollHeight}px`;
+            container.offsetHeight; // Trigger reflow
         }
-        console.debug("Total pages to rerender:", totalPagesToRender);
-        totalPagesToRender.forEach(await rerenderPage);
     }
 
     function loadPdf() {
