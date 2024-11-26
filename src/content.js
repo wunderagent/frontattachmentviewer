@@ -365,5 +365,24 @@ function injectFileToModal(url, mimeType) {
   document.dispatchEvent(event);
 }
 
-document.addEventListener('click', handleMouseClick, true); // the boolean at the end is for capture phase: means it will be handled before other elements otherwise Front App will handle it first
-document.addEventListener('keydown', handleKeyPress, true); // the boolean at the end is for capture phase: means it will be handled before other elements otherwise Front App will handle it first
+// Listen for changes to chrome.storage
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  if (namespace === 'sync' && changes.isEnabled) {
+    const isEnabled = changes.isEnabled.newValue ?? true;
+    if (isEnabled) {
+      document.addEventListener('click', handleMouseClick, true);
+      document.addEventListener('keydown', handleKeyPress, true);
+    } else {
+      document.removeEventListener('click', handleMouseClick, true);
+      document.removeEventListener('keydown', handleKeyPress, true);
+    }
+  }
+});
+
+// Initial setup
+chrome.storage.sync.get("isEnabled", (data) => {
+  if (data.isEnabled ?? true) {
+    document.addEventListener('click', handleMouseClick, true);
+    document.addEventListener('keydown', handleKeyPress, true);
+  }
+});

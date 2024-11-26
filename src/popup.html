@@ -1,12 +1,29 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
-  <title>PDF Viewer</title>
+  <title>Front Modal</title>
   <link rel="stylesheet" href="styles/tailwind.css">
 </head>
-<body>
-  <h1>PDF Viewer Extension</h1>
-  <p>Click on a PDF link to view the file in a modal window.</p>
+
+<body style="min-width: 200px;">
+  <div class="w-full h-fit flex items-center justify-center py-2 bg-black">
+    <img src="./images/icon32.png" alt="Front Modal">
+    <h1 class="text-xl font-bold ml-2">Front Modal</h1>
+  </div>
+  <div class="main p-4 bg-grey-200">
+    <div class="w-full flex items-center">
+      <div class="flex flex-grow">
+        <span id="status_sym">●</span>
+        <span id="status" class="ml-2">Disabled</span>
+      </div>
+      <input type="checkbox" id="toggle" class="toggle toggle-xs toggle-success" />
+    </div>
+
+    <p class="my-4">Click on an attachment to view the file in a modal window.</p>
+    <script src="scripts/popup.js"></script>
+  </div>
 </body>
+
 </html>
