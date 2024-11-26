@@ -49,9 +49,7 @@ window.onLoadPdfScript = async () => {
         for (let i = visibleStartPage; i <= visibleEndPage; i++) {
             totalPagesToRender.push(i);
         }
-        console.debug("Total pages to render:", totalPagesToRender);
         const pagesToRender = totalPagesToRender.filter(pageNum => !shadow.getElementById(getPageId(pageNum)));
-        console.debug("Pages to render:", pagesToRender);
         pagesToRender.forEach(await renderPage);
     }
 
