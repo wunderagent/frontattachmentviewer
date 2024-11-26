@@ -123,6 +123,7 @@ window.onLoadPdfScript = async () => {
         shadow.getElementById('zoom-out').removeEventListener('click', zoomOutHandler);
         shadow.getElementById('zoom-reset').removeEventListener('click', zoomResetHandler);
         container.removeEventListener('scroll', loadVisiblePages);
+        container.innerHTML = '';
 
         if (pdfUrl) {
             pdfUrl.destroy();
