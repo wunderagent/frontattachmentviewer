@@ -4,6 +4,7 @@ let pdfUrl = null;
 let currentObjectAttachment = null;
 let currentMimeType = null;
 let attachments = [];
+let printDocument = () => {}
 
 const handleKeyPress = (event) => handleKeyPressGlobal(event);
 
@@ -44,6 +45,7 @@ const handleMouseClick = async function (event) {
   event.preventDefault();
   console.debug('Event propagation stopped and default prevented');
   attachments = [];
+  printDocument = () => {};
 
   url = "https://app.frontapp.com" + url;
   let fileName = element.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim() || null;
@@ -83,6 +85,7 @@ const handleMouseClick = async function (event) {
   if (attachments.length > 1)
     addMultiAttachmentButtonsAndLogic(element, popup);
   adjustDownloadButton(fileName, url);
+  adjustPrintButton();
   injectFileToModal(url, mimeType);
 }
 
@@ -96,6 +99,21 @@ function createPopup(fileName) {
   const popupHeader = document.createElement('div');
   popupHeader.id = 'popup-header';
   popupHeader.classList.add('h-16', 'flex', 'items-center', 'w-full', 'pointer-events-auto');
+
+  // print button
+  const print_button_placeholder = document.createElement('div');
+  print_button_placeholder.id = 'print-button-placeholder';
+  const printButton = document.createElement('a');
+  printButton.id = 'printButton';
+  printButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <path fill="#ffffff" d="M21 8h-1V2c0-1.1-.9-2-2-2H6C4.9 0 4 .9 4 2v6H3c-1.65 0-3 1.35-3 3v6c0 1.65 1.35 3 3 3h2v2c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-2h2c1.65 0 3-1.35 3-3v-6c0-1.65-1.35-3-3-3zM6 2.5c0-.276.224-.5.5-.5h11c.276 0 .5.224.5.5V8H6V2.5zm11 19c0 .276-.224.5-.5.5h-9c-.276 0-.5-.224-.5-.5V17h10v4.5zm5-4.5c0 .54-.46 1-1 1h-2v-1c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v1H3c-.54 0-1-.46-1-1v-6c0-.54.46-1 1-1h18c.54 0 1 .46 1 1v6z"/>
+  <circle fill="#ffffff" cx="5" cy="13" r="1"/>
+</svg>`;
+  printButton.style.width = '32px';
+  printButton.style.height = '32px';
+  printButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
+  print_button_placeholder.appendChild(printButton);
+  popupHeader.appendChild(print_button_placeholder);
 
   // download button
   const button_placeholder = document.createElement('div');
@@ -203,6 +221,11 @@ const removeModal = () => {
   }
 };
 
+function adjustPrintButton() {
+  const printButton = shadow.getElementById("printButton");
+  printButton.onclick = printDocument;
+}
+
 function adjustDownloadButton(fileName, url, mimeType) {
   const downloadButton = shadow.getElementById("downloadButton");
   downloadButton.href = url;
@@ -260,6 +283,7 @@ const navigateAttachments = async (attachmentElements, direction) => {
 
   const url = "https://app.frontapp.com" + newUrl
   adjustDownloadButton(fileName, url);
+  adjustPrintButton();
   injectFileToModal(url, mimeType);
   console.debug('New file injected into modal');
   currentAttachmentIndex = newIndex;

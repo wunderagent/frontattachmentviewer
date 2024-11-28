@@ -107,7 +107,7 @@ window.onLoadPdfScript = async () => {
         // Configure PDF.js to use the local worker script
         pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
         console.debug("worker imported");
-
+        printDocument = () => printPdfDocument();
         document.addEventListener('discard', discard);
         document.addEventListener("CustomEvent", customEventHandler);
         shadow.getElementById('zoom-in').addEventListener('click', zoomInHandler);
@@ -117,6 +117,7 @@ window.onLoadPdfScript = async () => {
     }
 
     function discard() {
+        printDocument = () => {};
         document.removeEventListener('discard', discard);
         document.removeEventListener("CustomEvent", customEventHandler);
         shadow.getElementById('zoom-in').removeEventListener('click', zoomInHandler);
@@ -131,6 +132,10 @@ window.onLoadPdfScript = async () => {
         }
         console.debug("PDF script discarded");
     };
+
+    function printPdfDocument() {
+      console.debug("Printing PDF document");
+    }
 
     function zoomIn() {
         console.debug("Zoom in clicked");
