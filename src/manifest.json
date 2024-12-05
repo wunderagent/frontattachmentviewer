@@ -45,7 +45,8 @@
         "pdf.js",
         "pdf.worker.js",
         "placeholder.js",
-        "styles/tailwind.css"
+        "styles/tailwind.css",
+        "images/*"
       ],
       "matches": [
         "<all_urls>"
