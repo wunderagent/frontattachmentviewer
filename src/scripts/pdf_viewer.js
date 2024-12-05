@@ -135,6 +135,32 @@ window.onLoadPdfScript = async () => {
 
     function printPdfDocument() {
       console.debug("Printing PDF document");
+      if (pdfUrl) {
+        pdfUrl.getPage(1).then((page) => {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+    
+          page.getOperatorList().then(() => {
+            const printContainer = document.createElement('div');
+            document.body.appendChild(printContainer);
+    
+            pdfUrl.getData().then((data) => {
+              const blob = new Blob([data], { type: 'application/pdf' });
+              const url = URL.createObjectURL(blob);
+              iframe.src = url;
+              
+              iframe.onload = () => {
+                const doc = iframe.contentWindow.document;
+                doc.title = "PDF Document";
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+              };
+    
+              document.body.appendChild(iframe);
+            });
+          });
+        });
+      }
     }
 
     function zoomIn() {
