@@ -107,7 +107,7 @@ window.onLoadPdfScript = async () => {
         // Configure PDF.js to use the local worker script
         pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.js');
         console.debug("worker imported");
-
+        printDocument = () => printPdfDocument();
         document.addEventListener('discard', discard);
         document.addEventListener("CustomEvent", customEventHandler);
         shadow.getElementById('zoom-in').addEventListener('click', zoomInHandler);
@@ -117,6 +117,7 @@ window.onLoadPdfScript = async () => {
     }
 
     function discard() {
+        printDocument = () => {};
         document.removeEventListener('discard', discard);
         document.removeEventListener("CustomEvent", customEventHandler);
         shadow.getElementById('zoom-in').removeEventListener('click', zoomInHandler);
@@ -131,6 +132,34 @@ window.onLoadPdfScript = async () => {
         }
         console.debug("PDF script discarded");
     };
+
+    function printPdfDocument() {
+      console.debug("Printing PDF document");
+      if (pdfUrl) {
+        pdfUrl.getPage(1).then((page) => {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+    
+          page.getOperatorList().then(() => {
+            const printContainer = document.createElement('div');
+            document.body.appendChild(printContainer);
+    
+            pdfUrl.getData().then((data) => {
+              const blob = new Blob([data], { type: 'application/pdf' });
+              const url = URL.createObjectURL(blob);
+              iframe.src = url;
+              
+              iframe.onload = () => {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+              };
+    
+              document.body.appendChild(iframe);
+            });
+          });
+        });
+      }
+    }
 
     function zoomIn() {
         console.debug("Zoom in clicked");

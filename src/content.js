@@ -4,6 +4,7 @@ let pdfUrl = null;
 let currentObjectAttachment = null;
 let currentMimeType = null;
 let attachments = [];
+let printDocument = () => {}
 
 const handleKeyPress = (event) => handleKeyPressGlobal(event);
 
@@ -44,6 +45,7 @@ const handleMouseClick = async function (event) {
   event.preventDefault();
   console.debug('Event propagation stopped and default prevented');
   attachments = [];
+  printDocument = () => {};
 
   url = "https://app.frontapp.com" + url;
   let fileName = element.querySelector('div[class*="StyledNameDiv"]')?.textContent?.trim() || null;
@@ -83,6 +85,7 @@ const handleMouseClick = async function (event) {
   if (attachments.length > 1)
     addMultiAttachmentButtonsAndLogic(element, popup);
   adjustDownloadButton(fileName, url);
+  adjustPrintButton();
   injectFileToModal(url, mimeType);
 }
 
@@ -97,14 +100,24 @@ function createPopup(fileName) {
   popupHeader.id = 'popup-header';
   popupHeader.classList.add('h-16', 'flex', 'items-center', 'w-full', 'pointer-events-auto');
 
+  // print button
+  const print_button_placeholder = document.createElement('div');
+  print_button_placeholder.id = 'print-button-placeholder';
+  const printButton = document.createElement('a');
+  printButton.id = 'printButton';
+  printButton.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/print.svg" alt="Drucken" width="18" height="18" />`;
+  printButton.style.width = '32px';
+  printButton.style.height = '32px';
+  printButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
+  print_button_placeholder.appendChild(printButton);
+  popupHeader.appendChild(print_button_placeholder);
+
   // download button
   const button_placeholder = document.createElement('div');
   button_placeholder.id = 'download-button-placeholder';
   const downloadButton = document.createElement('a');
   downloadButton.id = 'downloadButton';
-  downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" width="24" height="24">
-<path d="M5.625 15C5.625 14.5858 5.28921 14.25 4.875 14.25C4.46079 14.25 4.125 14.5858 4.125 15H5.625ZM4.875 16H4.125H4.875ZM19.275 15C19.275 14.5858 18.9392 14.25 18.525 14.25C18.1108 14.25 17.775 14.5858 17.775 15H19.275ZM11.1086 15.5387C10.8539 15.8653 10.9121 16.3366 11.2387 16.5914C11.5653 16.8461 12.0366 16.7879 12.2914 16.4613L11.1086 15.5387ZM16.1914 11.4613C16.4461 11.1347 16.3879 10.6634 16.0613 10.4086C15.7347 10.1539 15.2634 10.2121 15.0086 10.5387L16.1914 11.4613ZM11.1086 16.4613C11.3634 16.7879 11.8347 16.8461 12.1613 16.5914C12.4879 16.3366 12.5461 15.8653 12.2914 15.5387L11.1086 16.4613ZM8.39138 10.5387C8.13662 10.2121 7.66533 10.1539 7.33873 10.4086C7.01212 10.6634 6.95387 11.1347 7.20862 11.4613L8.39138 10.5387ZM10.95 16C10.95 16.4142 11.2858 16.75 11.7 16.75C12.1142 16.75 12.45 16.4142 12.45 16H10.95ZM12.45 5C12.45 4.58579 12.1142 4.25 11.7 4.25C11.2858 4.25 10.95 4.58579 10.95 5H12.45ZM4.125 15V16H5.625V15H4.125ZM4.125 16C4.125 18.0531 5.75257 19.75 7.8 19.75V18.25C6.61657 18.25 5.625 17.2607 5.625 16H4.125ZM7.8 19.75H15.6V18.25H7.8V19.75ZM15.6 19.75C17.6474 19.75 19.275 18.0531 19.275 16H17.775C17.775 17.2607 16.7834 18.25 15.6 18.25V19.75ZM19.275 16V15H17.775V16H19.275ZM12.2914 16.4613L16.1914 11.4613L15.0086 10.5387L11.1086 15.5387L12.2914 16.4613ZM12.2914 15.5387L8.39138 10.5387L7.20862 11.4613L11.1086 16.4613L12.2914 15.5387ZM12.45 16V5H10.95V16H12.45Z" fill="#ffffff"/>
-</svg>`;
+  downloadButton.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/download.svg" alt="Herunterladen" width="24" height="24" />`;
   downloadButton.style.width = '32px';
   downloadButton.style.height = '32px';
   downloadButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
@@ -122,7 +135,7 @@ function createPopup(fileName) {
   const closeButtonContainer = document.createElement('div');
   closeButtonContainer.classList.add('flex', 'justify-center', 'items-center', 'pointer-events-auto');
   const closeButton = document.createElement('button');
-  closeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="#C4C7C5"></path><path d="M0 0h24v24H0z" fill="none"></path></svg>`;
+  closeButton.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/close.svg" alt="Schliessen" width="24" height="24" />`;
   closeButton.id = 'closeModalButton';
   closeButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
   closeButton.addEventListener('click', removeModal);
@@ -166,23 +179,17 @@ function createPopup(fileName) {
   const button_zoom_in = document.createElement("button");
   button_zoom_in.id = "zoom-in";
   button_zoom_in.style.pointerEvents = 'auto';
-  button_zoom_in.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M4 12H20M12 4V20" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`;
+  button_zoom_in.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/plus.svg" alt="Vergrössern" width="24" height="24" />`;
   button_zoom_in.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'btn', 'btn-circle', 'border-none', 'pointer-events-auto');
   const button_zoom_out = document.createElement("button");
   button_zoom_out.id = "zoom-out";
   button_zoom_out.style.pointerEvents = 'auto';
-  button_zoom_out.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-  <g id="Complete"><g id="minus"><line fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="4" x2="20" y1="12" y2="12" /></g></g>
-</svg>`;
+  button_zoom_out.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/minus.svg" alt="Verkleinern" width="24" height="24" />`;
   button_zoom_out.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'btn', 'btn-circle', 'border-none', 'pointer-events-auto');
   const button_zoom_reset = document.createElement("button");
   button_zoom_reset.id = "zoom-reset";
   button_zoom_reset.style.pointerEvents = 'auto';
-  button_zoom_reset.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M15.8053 15.8013L21 21M10.5 7.5V13.5M7.5 10.5H13.5M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`;
+  button_zoom_reset.innerHTML =  `<img src="chrome-extension://${chrome.runtime.id}/images/svg/zoom.svg" alt="Reset" width="24" height="24" />`;
   button_zoom_reset.classList.add('text-white', 'mx-4', 'text-lg', 'h-8', 'w-8', 'pointer-events-auto');
 
   controls.appendChild(button_zoom_out);
@@ -202,6 +209,11 @@ const removeModal = () => {
     modal.remove();
   }
 };
+
+function adjustPrintButton() {
+  const printButton = shadow.getElementById("printButton");
+  printButton.onclick = printDocument;
+}
 
 function adjustDownloadButton(fileName, url, mimeType) {
   const downloadButton = shadow.getElementById("downloadButton");
@@ -260,6 +272,7 @@ const navigateAttachments = async (attachmentElements, direction) => {
 
   const url = "https://app.frontapp.com" + newUrl
   adjustDownloadButton(fileName, url);
+  adjustPrintButton();
   injectFileToModal(url, mimeType);
   console.debug('New file injected into modal');
   currentAttachmentIndex = newIndex;
@@ -276,9 +289,7 @@ function addMultiAttachmentButtonsAndLogic(element) {
   // controls
   const leftArrow = document.createElement("button");
   leftArrow.id = "leftArrow";
-  leftArrow.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M15.7071 4.29289C16.0976 4.68342 16.0976 5.31658 15.7071 5.70711L9.41421 12L15.7071 18.2929C16.0976 18.6834 16.0976 19.3166 15.7071 19.7071C15.3166 20.0976 14.6834 20.0976 14.2929 19.7071L7.29289 12.7071C7.10536 12.5196 7 12.2652 7 12C7 11.7348 7.10536 11.4804 7.29289 11.2929L14.2929 4.29289C14.6834 3.90237 15.3166 3.90237 15.7071 4.29289Z" fill="#ffffff"/>
-</svg>`;
+  leftArrow.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/arrow-left.svg" alt="Vorherige" width="24" height="24" />`;
   leftArrow.classList.add('pointer-events-auto', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none');
   leftArrow.onclick = moveToPreviousAttachment;
   const leftContainer = shadow.getElementById('left-container');
@@ -287,9 +298,7 @@ function addMultiAttachmentButtonsAndLogic(element) {
   const rightArrow = document.createElement('button');
   rightArrow.id = 'rightArrow';
   rightArrow.classList.add('mr-8', 'pointer-events-auto', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none');
-  rightArrow.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M8.29289 4.29289C8.68342 3.90237 9.31658 3.90237 9.70711 4.29289L16.7071 11.2929C17.0976 11.6834 17.0976 12.3166 16.7071 12.7071L9.70711 19.7071C9.31658 20.0976 8.68342 20.0976 8.29289 19.7071C7.90237 19.3166 7.90237 18.6834 8.29289 18.2929L14.5858 12L8.29289 5.70711C7.90237 5.31658 7.90237 4.68342 8.29289 4.29289Z" fill="#ffffff"/>
-</svg>`;
+  rightArrow.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/arrow-right.svg" alt="Nächste" width="24" height="24" />`;
   rightArrow.onclick = moveToNextAttachment;
   const rightContainer = shadow.getElementById('right-container');
   rightContainer.appendChild(rightArrow);

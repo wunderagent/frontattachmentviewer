@@ -2,6 +2,7 @@ window.onLoadObjectViewerScript = async () => {
     async function initialize() {
       console.log('Loading object viewer script');
       scale = 1.0;
+      printDocument = () => printObjDocument();
       document.addEventListener("discard", discard);
       document.addEventListener("CustomEvent", customEventHandler);
       shadow.getElementById('zoom-in').addEventListener('click', zoomInHandler);
@@ -11,7 +12,8 @@ window.onLoadObjectViewerScript = async () => {
     }
   
     function discard() {
-    console.log('Loading object viewer script');
+      console.log('Discarding object viewer script');
+      printDocument = () => {};
       document.removeEventListener("discard", discard);
       document.removeEventListener("CustomEvent", customEventHandler);
       shadow.getElementById('zoom-in').removeEventListener('click', zoomInHandler);
@@ -20,6 +22,28 @@ window.onLoadObjectViewerScript = async () => {
       currentObjectAttachment = null;
       currentMimeType = null;
       console.debug("Obejct script discarded");
+    }
+
+    function printObjDocument() {
+      console.debug("Printing obj document");
+      const disturbingItems = [
+        'popup-header',
+        'zoom-controls',
+        'left-container',
+        'right-container'
+      ]
+      disturbingItems.map(item => {
+        console.log("item", item)
+        const element = shadow.getElementById(item)
+        element?.classList.add("hidden")
+      })
+      
+      window.print();
+
+      disturbingItems.map(item => {
+        const element = shadow.getElementById(item)
+        element?.classList.remove("hidden")
+      })
     }
   
     function handleCustomAttachmentEvent(event) {
