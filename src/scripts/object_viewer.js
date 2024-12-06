@@ -26,43 +26,24 @@ window.onLoadObjectViewerScript = async () => {
 
     function printObjDocument() {
       console.debug("Printing obj document");
+      const disturbingItems = [
+        'popup-header',
+        'zoom-controls',
+        'left-container',
+        'right-container'
+      ]
+      disturbingItems.map(item => {
+        console.log("item", item)
+        const element = shadow.getElementById(item)
+        element?.classList.add("hidden")
+      })
+      
       window.print();
-      /*{
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-  
-        page.getOperatorList().then(() => {
-          const printContainer = document.createElement('div');
-          document.body.appendChild(printContainer);
-  
-          pdfUrl.getData().then((data) => {
-            const blob = new Blob([data], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
-            iframe.src = url;
-            
-            iframe.onload = () => {
-              const doc = iframe.contentWindow.document;
-              doc.title = "PDF Document";
-              const link = doc.createElement('a');
-              link.href = url;
-              link.download = "document.pdf";
-              doc.body.appendChild(link);
-              link.click();
-              doc.body.removeChild(link);
-              iframe.contentWindow.focus();
-              iframe.contentWindow.print();
-            };
-  
-          //   iframe.onload = () => {
-          //     iframe.contentWindow.focus();
-          //     iframe.contentWindow.document.title = "PDF Document";
-          //     iframe.contentWindow.print();
-          //   };
-  
-            document.body.appendChild(iframe);
-          });
-        });
-      }*/
+
+      disturbingItems.map(item => {
+        const element = shadow.getElementById(item)
+        element?.classList.remove("hidden")
+      })
     }
   
     function handleCustomAttachmentEvent(event) {

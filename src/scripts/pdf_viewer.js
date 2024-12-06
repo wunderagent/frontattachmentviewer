@@ -150,8 +150,6 @@ window.onLoadPdfScript = async () => {
               iframe.src = url;
               
               iframe.onload = () => {
-                const doc = iframe.contentWindow.document;
-                doc.title = "PDF Document";
                 iframe.contentWindow.focus();
                 iframe.contentWindow.print();
               };
