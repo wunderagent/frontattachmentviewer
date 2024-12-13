@@ -91,6 +91,7 @@ const handleMouseClick = async function (event) {
     addMultiAttachmentButtonsAndLogic(element, popup);
   adjustDownloadButton(fileName, url);
   adjustPrintButton();
+  adjustOpenTabButton(url)
   injectFileToModal(url, mimeType);
 }
 
@@ -105,11 +106,27 @@ function createPopup(fileName) {
   popupHeader.id = 'popup-header';
   popupHeader.classList.add('h-16', 'flex', 'items-center', 'w-full', 'pointer-events-auto');
 
+  // open in new tab button
+  const open_tab_button_placeholder = document.createElement('div');
+  open_tab_button_placeholder.id = 'open-tab-button-placeholder';
+  const open_tabButton = document.createElement('a');
+  open_tabButton.target = '_blank';
+  open_tabButton.rel = 'noopener noreferrer';
+  open_tabButton.id = 'open-tab-Button';
+  open_tabButton.alt = 'In neuem Tab öffnen';
+  open_tabButton.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/open-tab.svg" alt="In neuem Tab öffnen" width="18" height="18" />`;
+  open_tabButton.style.width = '32px';
+  open_tabButton.style.height = '32px';
+  open_tabButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
+  open_tab_button_placeholder.appendChild(open_tabButton);
+  popupHeader.appendChild(open_tab_button_placeholder);
+
   // print button
   const print_button_placeholder = document.createElement('div');
   print_button_placeholder.id = 'print-button-placeholder';
   const printButton = document.createElement('a');
   printButton.id = 'printButton';
+  printButton.alt = 'Drucken';
   printButton.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/print.svg" alt="Drucken" width="18" height="18" />`;
   printButton.style.width = '32px';
   printButton.style.height = '32px';
@@ -122,12 +139,35 @@ function createPopup(fileName) {
   button_placeholder.id = 'download-button-placeholder';
   const downloadButton = document.createElement('a');
   downloadButton.id = 'downloadButton';
+  downloadButton.alt = 'Herunterladen';
   downloadButton.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/download.svg" alt="Herunterladen" width="24" height="24" />`;
   downloadButton.style.width = '32px';
   downloadButton.style.height = '32px';
   downloadButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
   button_placeholder.appendChild(downloadButton);
   popupHeader.appendChild(button_placeholder);
+
+  // tooltip
+  const tooltip = document.createElement('div');
+  tooltip.id = 'tooltip';
+  tooltip.classList.add('tooltip', 'hidden', 'absolute', 'bg-gray-700', 'text-white', 'text-xs', 'rounded', 'py-1', 'px-2', 'pointer-events-none');
+  tooltip.style.zIndex = '1000';
+  shadow.appendChild(tooltip);
+
+  // Show tooltip on hover
+  const buttons = [open_tabButton, printButton, downloadButton];
+  buttons.forEach(button => {
+    button.addEventListener('mouseenter', (event) => {
+      tooltip.innerText = button.alt;
+      tooltip.style.left = `${event.clientX}px`;
+      tooltip.style.top = `${event.clientY + 20}px`;
+      tooltip.classList.remove('hidden');
+    });
+
+    button.addEventListener('mouseleave', () => {
+      tooltip.classList.add('hidden');
+    });
+  });
 
   // title
   const popupHeaderTitle = document.createElement('p');
@@ -227,6 +267,11 @@ function adjustDownloadButton(fileName, url, mimeType) {
   downloadButton.mimeType = mimeType;
 }
 
+function adjustOpenTabButton(url) {
+  const openTabButton = shadow.getElementById("open-tab-Button");
+  openTabButton.href = url;
+}
+
 function findOtherAttachments(currentStyledAttachmentButton) {
   console.debug('Finding attachments');
   let rootAttachmentElement = currentStyledAttachmentButton;
@@ -281,6 +326,7 @@ const navigateAttachments = async (attachmentElements, direction) => {
   const url = "https://app.frontapp.com" + newUrl
   adjustDownloadButton(fileName, url);
   adjustPrintButton();
+  adjustOpenTabButton(url)
   injectFileToModal(url, mimeType);
   console.debug('New file injected into modal');
   currentAttachmentIndex = newIndex;
