@@ -5,6 +5,8 @@ let currentObjectAttachment = null;
 let currentMimeType = null;
 let attachments = [];
 let printDocument = () => {}
+let attachmentProcessor = null;
+const BASE_PATH = "/cell-00016/api/1/companies/ab15a3e2e8561d957cb4/attachments/"
 
 const handleKeyPress = (event) => handleKeyPressGlobal(event);
 
@@ -23,20 +25,23 @@ const handleMouseClick = async function (event) {
   let element = event.target;
 
   // get root attachment element
-  while (element && Array.from(element.classList).filter(data => data.startsWith("attachmentBase__StyledAttachmentButton")).length === 0) {
-    element = element.parentElement;
+  while (element){
+    if (Array.from(element.classList).filter(data => data.startsWith("attachmentBase__StyledAttachmentButton")).length > 0
+    || Array.from(element.classList).filter(data => data.startsWith("commentAttachment__StyledAttachmentBase")).length > 0) {
+      break;
+    }
+    else {
+      element = element.parentElement;
+    }
   }
   if (!element) {
     console.debug('No attachment element found, exiting');
     return;
   }
 
-  let url = element.querySelector('img')
-    ?.getAttribute('src')
-    ?.replace('?action=thumbnail', '?action=view')
-    ?.replace('&action=thumbnail', '&action=view');
-
-  if (!url) {
+  let attachmentId = getAttachmentId(element);
+  let url = BASE_PATH + attachmentId + "?action=view";
+  if (!attachmentId) {
     console.debug('No URL found, exiting');
     return;
   }
@@ -237,6 +242,11 @@ function findOtherAttachments(currentStyledAttachmentButton) {
   return Array.from(rootAttachmentElement.querySelectorAll('[class*="attachmentBase__StyledAttachmentButton"]'));
 }
 
+const getAttachmentId = (element) => {
+  const parts = element.getAttribute('data-testid').split("-");
+  return parts[parts.length - 1];
+}
+
 const navigateAttachments = async (attachmentElements, direction) => {
   console.debug('Navigating attachments, direction:', direction);
   let newIndex = currentAttachmentIndex + direction;
@@ -248,10 +258,8 @@ const navigateAttachments = async (attachmentElements, direction) => {
   }
 
   const newElement = attachmentElements[newIndex];
-  const newUrl = newElement.querySelector('img')
-    ?.getAttribute('src')
-    ?.replace('?action=thumbnail', '?action=view')
-    ?.replace('&action=thumbnail', '&action=view') + '&embedded=true';
+  let attachmentId = getAttachmentId(element);
+  let newUrl = BASE_PATH + attachmentId + "?action=view";
 
   console.debug('New URL:', newUrl);
 
