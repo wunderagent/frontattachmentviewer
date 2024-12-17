@@ -2,11 +2,12 @@
   "manifest_version": 3,
   "name": "Front Modal",
   "description": "Stop opening Front App attachments in a separate tab. Use this extension that allows you to view attachments in a modal",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "permissions": [
     "storage",
-    "scripting",
-    "tabs"
+    "activeTab",
+    "runtime",
+    "action"
   ],
   "host_permissions": [
     "https://app.frontapp.com/*"
