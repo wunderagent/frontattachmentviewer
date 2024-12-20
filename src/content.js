@@ -303,7 +303,7 @@ const navigateAttachments = async (attachmentElements, direction) => {
   }
 
   const newElement = attachmentElements[newIndex];
-  let attachmentId = getAttachmentId(element);
+  let attachmentId = getAttachmentId(newElement);
   let newUrl = BASE_PATH + attachmentId + "?action=view";
 
   console.debug('New URL:', newUrl);
