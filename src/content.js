@@ -11,21 +11,21 @@ const BASE_PATH = "/cell-00016/api/1/companies/ab15a3e2e8561d957cb4/attachments/
 const handleKeyPress = (event) => handleKeyPressGlobal(event);
 
 const handleMouseClick = async function (event) {
-  // Check if download button is clicked within Front App
-  if (event.target.getAttribute('href') === '#icon-downloadCircle') {
-    return;
-  }
-
-  // Check if the click event is within the popup
-  if (event.target.id === "extension-container" || event.target.closest('#attachment-popup')) {
-    return;
-  }
-
   console.debug('Click event detected:', event.target);
   let element = event.target;
 
   // get root attachment element
   while (element){
+    // Check if download button is clicked within Front App
+    if (element.getAttribute('href') === '#icon-downloadCircle'
+      // Close / Erase button should be ignored
+      || element.getAttribute('data-testid') === 'crossCircle'
+      // Check if the click event is within the popup
+      || element.id === "extension-container"
+      || element.closest('#attachment-popup')) {
+      return
+    }
+
     if (Array.from(element.classList).filter(data => data.startsWith("attachmentBase__StyledAttachmentButton")).length > 0
     || Array.from(element.classList).filter(data => data.startsWith("commentAttachment__StyledAttachmentBase")).length > 0) {
       break;
