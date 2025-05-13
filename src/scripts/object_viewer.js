@@ -71,13 +71,24 @@ window.onLoadObjectViewerScript = async () => {
       canvasContainer.clientHeight = "100%";
   
       const height = canvasContainer.clientHeight * scale;
-  
-      const canvas = document.createElement('object');
-      canvas.style.width = 'auto';
-      canvas.style.height = `${height}px`;
-      canvas.data = currentObjectAttachment;
-      canvas.type = currentMimeType;
-      canvasContainer.appendChild(canvas);
+
+      // Handle images with img element
+      if (currentMimeType.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.style.width = 'auto';
+        img.style.height = `${height}px`;
+        img.src = currentObjectAttachment;
+        img.alt = 'Attachment preview';
+        canvasContainer.appendChild(img);
+      } else {
+        // Fallback to object element for other file types
+        const canvas = document.createElement('object');
+        canvas.style.width = 'auto';
+        canvas.style.height = `${height}px`;
+        canvas.data = currentObjectAttachment;
+        canvas.type = currentMimeType;
+        canvasContainer.appendChild(canvas);
+      }
       console.debug('File injected into modal');
     }
   
