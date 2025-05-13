@@ -382,7 +382,7 @@ function getMimeType(fileExtension) {
     // Add more mappings as needed
   };
 
-  return mimeTypes[fileExtension];
+  return mimeTypes[fileExtension.toLowerCase()];
 }
 
 function removeCurrentInjectedContent() {

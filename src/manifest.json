@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Front Attachment Viewer",
   "description": "Stop opening Front App attachments in a separate tab. Use this extension that allows you to view attachments in a modal",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "permissions": [
     "storage",
     "activeTab"
