@@ -90,7 +90,7 @@ window.onLoadPdfScript = async () => {
     }
 
     function handleCustomPdfEvent(event) {
-        console.debug("Received message in popup.js:", event);
+        console.debug("Received message in pdf_viewer:", event);
         if (event?.detail?.action
             && event.detail.action == "injectPopup"
             && event?.detail?.data) {
