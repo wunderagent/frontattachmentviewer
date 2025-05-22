@@ -173,7 +173,9 @@ function createPopup(fileName) {
   const popupHeaderTitle = document.createElement('p');
   popupHeaderTitle.id = 'popup-header-title';
   popupHeaderTitle.classList.add('text-xl', 'text-white', 'ml-2', 'flex-grow', 'pointer-events-auto');
-  popupHeaderTitle.innerText = fileName;
+  const maxLength = Math.floor(window.innerWidth * 0.4 / 8); // Approximate character width based on 20% of viewport width
+  const title = fileName.length > maxLength ? fileName.slice(0, Math.floor(maxLength/2)) + '...' + fileName.slice(-Math.floor(maxLength/2)) : fileName;
+  popupHeaderTitle.innerText = title;
   popupHeader.prepend(popupHeaderTitle);
 
   // close button
