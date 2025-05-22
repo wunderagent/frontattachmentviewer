@@ -96,6 +96,17 @@ const handleMouseClick = async function (event) {
 }
 
 function createPopup(fileName) {
+  const addHoverEffect = (element) => {
+    element.style.transition = 'background-color 0.2s';
+    element.style.borderRadius = '9999px';
+    element.style.position = 'relative';
+    element.style.display = 'flex';
+    element.style.alignItems = 'center';
+    element.style.justifyContent = 'center';
+    element.onmouseover = () => element.style.backgroundColor = 'rgb(55, 65, 81)'; // gray-700
+    element.onmouseout = () => element.style.backgroundColor = 'transparent';
+  };
+
   const popup = document.createElement('div');
   popup.id = 'attachment-popup';
   popup.classList.add('w-full', 'h-full', 'flex', 'flex-col', 'pointer-events-auto', 'overflow-hidden', 'items-center', 'relative');
@@ -109,41 +120,42 @@ function createPopup(fileName) {
   // open in new tab button
   const open_tab_button_placeholder = document.createElement('div');
   open_tab_button_placeholder.id = 'open-tab-button-placeholder';
-  const open_tabButton = document.createElement('a');
-  open_tabButton.target = '_blank';
-  open_tabButton.rel = 'noopener noreferrer';
+  const open_tabButton = document.createElement('button');
   open_tabButton.id = 'open-tab-Button';
   open_tabButton.alt = 'In neuem Tab öffnen';
   open_tabButton.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/open-tab.svg" alt="In neuem Tab öffnen" width="18" height="18" />`;
   open_tabButton.style.width = '32px';
   open_tabButton.style.height = '32px';
-  open_tabButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
+  open_tabButton.classList.add('mx-4', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
+  addHoverEffect(open_tabButton);
   open_tab_button_placeholder.appendChild(open_tabButton);
   popupHeader.appendChild(open_tab_button_placeholder);
 
   // print button
   const print_button_placeholder = document.createElement('div');
   print_button_placeholder.id = 'print-button-placeholder';
-  const printButton = document.createElement('a');
+  const printButton = document.createElement('button');
   printButton.id = 'printButton';
   printButton.alt = 'Drucken';
   printButton.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/print.svg" alt="Drucken" width="18" height="18" />`;
   printButton.style.width = '32px';
   printButton.style.height = '32px';
-  printButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
+  printButton.classList.add('mx-2', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
+  addHoverEffect(printButton);
   print_button_placeholder.appendChild(printButton);
   popupHeader.appendChild(print_button_placeholder);
 
   // download button
   const button_placeholder = document.createElement('div');
   button_placeholder.id = 'download-button-placeholder';
-  const downloadButton = document.createElement('a');
+  const downloadButton = document.createElement('button');
   downloadButton.id = 'downloadButton';
   downloadButton.alt = 'Herunterladen';
   downloadButton.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/download.svg" alt="Herunterladen" width="24" height="24" />`;
   downloadButton.style.width = '32px';
   downloadButton.style.height = '32px';
-  downloadButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
+  downloadButton.classList.add('mx-4', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
+  addHoverEffect(downloadButton);
   button_placeholder.appendChild(downloadButton);
   popupHeader.appendChild(button_placeholder);
 
@@ -184,7 +196,8 @@ function createPopup(fileName) {
   const closeButton = document.createElement('button');
   closeButton.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/close.svg" alt="Schliessen" width="24" height="24" />`;
   closeButton.id = 'closeModalButton';
-  closeButton.classList.add('mx-4', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
+  closeButton.classList.add('mx-4', 'h-8', 'w-8', 'border-none', 'pointer-events-auto');
+  addHoverEffect(closeButton);
   closeButton.addEventListener('click', removeModal);
   closeButtonContainer.appendChild(closeButton);
   popupHeader.prepend(closeButtonContainer);
@@ -222,22 +235,26 @@ function createPopup(fileName) {
   // zoom controls
   const controls = document.createElement("div");
   controls.id = "zoom-controls";
-  controls.classList.add('flex', 'justify-center', 'items-center', 'mb-4', 'p-1', 'w-fit', 'rounded-full', 'bg-black', 'bg-opacity-90', 'bg-scroll', 'absolute', 'bottom-2.5', 'left-1/2', 'transform', '-translate-x-1/2', 'pointer-events-auto');
+  controls.classList.add('flex', 'justify-center', 'items-center', 'mt-4', 'mb-4', 'w-fit', 'rounded-full', 'bg-black', 'bg-opacity-90', 'bg-scroll', 'absolute', 'bottom-2.5', 'left-1/2', 'transform', '-translate-x-1/2', 'pointer-events-auto');
   const button_zoom_in = document.createElement("button");
   button_zoom_in.id = "zoom-in";
   button_zoom_in.style.pointerEvents = 'auto';
+  button_zoom_in.style.borderRadius = '9999px';
   button_zoom_in.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/plus.svg" alt="Vergrössern" width="24" height="24" />`;
-  button_zoom_in.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'btn', 'btn-circle', 'border-none', 'pointer-events-auto');
+  button_zoom_in.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'border-none', 'pointer-events-auto');
+  addHoverEffect(button_zoom_in);
   const button_zoom_out = document.createElement("button");
   button_zoom_out.id = "zoom-out";
   button_zoom_out.style.pointerEvents = 'auto';
   button_zoom_out.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/minus.svg" alt="Verkleinern" width="24" height="24" />`;
-  button_zoom_out.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'btn', 'btn-circle', 'border-none', 'pointer-events-auto');
+  button_zoom_out.classList.add('text-white', 'mx-2', 'h-6', 'w-6', 'border-none', 'pointer-events-auto');
+  addHoverEffect(button_zoom_out);
   const button_zoom_reset = document.createElement("button");
   button_zoom_reset.id = "zoom-reset";
   button_zoom_reset.style.pointerEvents = 'auto';
   button_zoom_reset.innerHTML =  `<img src="chrome-extension://${chrome.runtime.id}/images/svg/zoom.svg" alt="Reset" width="24" height="24" />`;
   button_zoom_reset.classList.add('text-white', 'mx-4', 'text-lg', 'h-8', 'w-8', 'pointer-events-auto');
+  addHoverEffect(button_zoom_reset);
 
   controls.appendChild(button_zoom_out);
   controls.appendChild(button_zoom_reset);
@@ -264,14 +281,17 @@ function adjustPrintButton() {
 
 function adjustDownloadButton(fileName, url, mimeType) {
   const downloadButton = shadow.getElementById("downloadButton");
-  downloadButton.href = url;
-  downloadButton.download = fileName;
-  downloadButton.mimeType = mimeType;
+  downloadButton.onclick = () => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+  };
 }
 
 function adjustOpenTabButton(url) {
   const openTabButton = shadow.getElementById("open-tab-Button");
-  openTabButton.href = url;
+  openTabButton.onclick = () => window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function findOtherAttachments(currentStyledAttachmentButton) {
@@ -346,15 +366,17 @@ function addMultiAttachmentButtonsAndLogic(element) {
   const leftArrow = document.createElement("button");
   leftArrow.id = "leftArrow";
   leftArrow.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/arrow-left.svg" alt="Vorherige" width="24" height="24" />`;
-  leftArrow.classList.add('pointer-events-auto', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none');
+  leftArrow.classList.add('pointer-events-auto', 'h-8', 'w-8', 'border-none');
+  addHoverEffect(leftArrow);
   leftArrow.onclick = moveToPreviousAttachment;
   const leftContainer = shadow.getElementById('left-container');
   leftContainer.appendChild(leftArrow);
 
   const rightArrow = document.createElement('button');
   rightArrow.id = 'rightArrow';
-  rightArrow.classList.add('mr-8', 'pointer-events-auto', 'btn', 'btn-circle', 'h-8', 'w-8', 'border-none');
+  rightArrow.classList.add('mr-8', 'pointer-events-auto', 'h-8', 'w-8', 'border-none');
   rightArrow.innerHTML = `<img src="chrome-extension://${chrome.runtime.id}/images/svg/arrow-right.svg" alt="Nächste" width="24" height="24" />`;
+  addHoverEffect(rightArrow);
   rightArrow.onclick = moveToNextAttachment;
   const rightContainer = shadow.getElementById('right-container');
   rightContainer.appendChild(rightArrow);
