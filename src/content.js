@@ -95,17 +95,18 @@ const handleMouseClick = async function (event) {
   injectFileToModal(url, mimeType);
 }
 
+const addHoverEffect = (element) => {
+  element.style.transition = 'background-color 0.2s';
+  element.style.borderRadius = '9999px';
+  element.style.position = 'relative';
+  element.style.display = 'flex';
+  element.style.alignItems = 'center';
+  element.style.justifyContent = 'center';
+  element.onmouseover = () => element.style.backgroundColor = 'rgb(55, 65, 81)'; // gray-700
+  element.onmouseout = () => element.style.backgroundColor = 'transparent';
+};
+
 function createPopup(fileName) {
-  const addHoverEffect = (element) => {
-    element.style.transition = 'background-color 0.2s';
-    element.style.borderRadius = '9999px';
-    element.style.position = 'relative';
-    element.style.display = 'flex';
-    element.style.alignItems = 'center';
-    element.style.justifyContent = 'center';
-    element.onmouseover = () => element.style.backgroundColor = 'rgb(55, 65, 81)'; // gray-700
-    element.onmouseout = () => element.style.backgroundColor = 'transparent';
-  };
 
   const popup = document.createElement('div');
   popup.id = 'attachment-popup';
