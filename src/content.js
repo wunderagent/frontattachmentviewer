@@ -18,6 +18,7 @@ const handleMouseClick = async function (event) {
   while (element){
     // Check if download button is clicked within Front App
     if (element.getAttribute('href') === '#icon-downloadCircle'
+      || element.getAttribute('href') === '#icon-downloadTiny'
       // Close / Erase button should be ignored
       || element.getAttribute('data-testid') === 'crossCircle'
       // Check if the click event is within the popup
@@ -27,7 +28,8 @@ const handleMouseClick = async function (event) {
     }
 
     if (Array.from(element.classList).filter(data => data.startsWith("attachmentBase__StyledAttachmentButton")).length > 0
-    || Array.from(element.classList).filter(data => data.startsWith("commentAttachment__StyledAttachmentBase")).length > 0) {
+    || Array.from(element.classList).filter(data => data.startsWith("commentAttachment__StyledAttachmentBase")).length > 0
+    || Array.from(element.classList).filter(data => data.startsWith("commentViewerSingleImageAttachment__StyledAttachmentDragSource")).length > 0) {
       break;
     }
     else {
@@ -40,11 +42,11 @@ const handleMouseClick = async function (event) {
   }
 
   let attachmentId = getAttachmentId(element);
-  let url = BASE_PATH + attachmentId + "?action=view";
   if (!attachmentId) {
     console.debug('No URL found, exiting');
     return;
   }
+  let url = BASE_PATH + attachmentId + "?action=view";
 
   event.stopPropagation();
   event.preventDefault();
@@ -165,14 +167,18 @@ function createPopup(fileName) {
   popupHeaderTitle.id = 'popup-header-title';
   popupHeaderTitle.classList.add('text-xl', 'text-white', 'ml-2', 'flex-grow', 'pointer-events-auto');
   
-  const updateTitle = () => {
+  const updateTitle = (fileName) => {
+    if (!fileName) {
+      popupHeaderTitle.innerText = '';
+      return;
+    }
     const maxLength = Math.floor(window.innerWidth * 0.3 / 8);
     const title = fileName.length > maxLength ? fileName.slice(0, Math.floor(maxLength/2)) + '...' + fileName.slice(-Math.floor(maxLength/2)) : fileName;
     popupHeaderTitle.innerText = title;
   };
   
-  updateTitle();
-  window.addEventListener('resize', updateTitle);
+  updateTitle(fileName);
+  window.addEventListener('resize', () => updateTitle(fileName));
   popupHeader.prepend(popupHeaderTitle);
 
   // close button
@@ -299,8 +305,27 @@ function findOtherAttachments(currentStyledAttachmentButton) {
 }
 
 const getAttachmentId = (element) => {
-  const parts = element.getAttribute('data-testid').split("-");
-  return parts[parts.length - 1];
+  if (Array.from(element.classList).filter(data => data.startsWith("commentViewerSingleImageAttachment__StyledAttachmentDragSource")).length > 0) {
+    const src = element.querySelector('img')?.src;
+    if (src) {
+      const parts = src.split("/attachments/");
+      if (parts.length > 1) {
+        const lastPart = parts[parts.length - 1];
+        if (lastPart.includes("?")) {
+          return lastPart.split("?")[0];
+        }
+        else {
+          return lastPart;
+        }
+      }
+    }
+  }
+
+  const dataTestId = element.getAttribute('data-testid');
+  if (dataTestId) {
+    const parts = dataTestId.split("-");
+    return parts[parts.length - 1];
+  }
 }
 
 const navigateAttachments = async (attachmentElements, direction) => {
