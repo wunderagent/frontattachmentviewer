@@ -72,6 +72,40 @@ window.onLoadObjectViewerScript = async () => {
   
       const height = canvasContainer.clientHeight * scale;
 
+      // Handle .doc and .xls files with error message and download button
+      if (currentMimeType === 'application/msword' || currentMimeType === 'application/vnd.ms-excel') {
+        const errorContainer = document.createElement('div');
+        errorContainer.style.display = 'flex';
+        errorContainer.style.flexDirection = 'column';
+        errorContainer.style.alignItems = 'center';
+        errorContainer.style.justifyContent = 'center';
+        errorContainer.style.height = '100%';
+        errorContainer.style.gap = '20px';
+
+        const errorMessage = document.createElement('p');
+        errorMessage.textContent = 'This file type cannot be previewed. Please download the file to view it.';
+        errorMessage.style.color = '#666';
+        errorMessage.style.fontSize = '16px';
+        errorMessage.style.textAlign = 'center';
+
+        const downloadButton = document.createElement('button');
+        downloadButton.textContent = 'Download';
+        downloadButton.style.padding = '10px 20px';
+        downloadButton.style.backgroundColor = '#007bff';
+        downloadButton.style.color = 'white';
+        downloadButton.style.border = 'none';
+        downloadButton.style.borderRadius = '4px';
+        downloadButton.style.cursor = 'pointer';
+        downloadButton.onclick = () => {
+          window.open(currentObjectAttachment, '_blank');
+        };
+
+        errorContainer.appendChild(errorMessage);
+        errorContainer.appendChild(downloadButton);
+        canvasContainer.appendChild(errorContainer);
+        return;
+      }
+
       // Handle images with img element
       if (currentMimeType.startsWith('image/')) {
         const img = document.createElement('img');

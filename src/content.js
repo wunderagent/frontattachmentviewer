@@ -419,6 +419,8 @@ function getMimeType(fileExtension) {
     avi: 'video/x-msvideo',
     zip: 'application/zip',
     rar: 'application/x-rar-compressed',
+    doc: 'application/msword',
+    xls: 'application/vnd.ms-excel',
     // Add more mappings as needed
   };
 
