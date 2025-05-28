@@ -21,6 +21,7 @@ window.onLoadObjectViewerScript = async () => {
       shadow.getElementById('zoom-reset').removeEventListener('click', zoomResetHandler);
       currentObjectAttachment = null;
       currentMimeType = null;
+      currentFileName = null;
       console.debug("Obejct script discarded");
     }
 
@@ -54,12 +55,13 @@ window.onLoadObjectViewerScript = async () => {
           console.debug("Object URL:", event.detail.data);
           currentObjectAttachment = event.detail.data;
           currentMimeType = event.detail.mimeType;
+          currentFileName = event.detail.fileName;
           loadAttachment();
         }
     }
   
     function loadAttachment() {
-      console.debug("Loading", currentObjectAttachment, currentMimeType);
+      console.debug("Loading", currentObjectAttachment, currentMimeType, currentFileName);
       const canvasContainer = shadow.getElementById('attachment-container');
       canvasContainer.innerHTML = ''; // Clear previous content
   
@@ -73,7 +75,7 @@ window.onLoadObjectViewerScript = async () => {
       const height = canvasContainer.clientHeight * scale;
 
       // Handle .doc and .xls files with error message and download button
-      if (currentMimeType === 'application/msword' || currentMimeType === 'application/vnd.ms-excel') {
+      if (!currentMimeType ||currentMimeType === 'application/msword' || currentMimeType === 'application/vnd.ms-excel') {
         const errorContainer = document.createElement('div');
         errorContainer.style.display = 'flex';
         errorContainer.style.flexDirection = 'column';
@@ -84,7 +86,7 @@ window.onLoadObjectViewerScript = async () => {
 
         const errorMessage = document.createElement('p');
         errorMessage.textContent = 'This file type cannot be previewed. Please download the file to view it.';
-        errorMessage.style.color = '#666';
+        errorMessage.style.color = '#fff';
         errorMessage.style.fontSize = '16px';
         errorMessage.style.textAlign = 'center';
 
@@ -96,8 +98,33 @@ window.onLoadObjectViewerScript = async () => {
         downloadButton.style.border = 'none';
         downloadButton.style.borderRadius = '4px';
         downloadButton.style.cursor = 'pointer';
-        downloadButton.onclick = () => {
-          window.open(currentObjectAttachment, '_blank');
+        downloadButton.onclick = async () => {
+          console.debug('Downloading file:', currentFileName);
+          try {
+            const response = await fetch(currentObjectAttachment);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = currentFileName || 'download';
+            shadow.appendChild(link);
+            link.click();
+            shadow.removeChild(link);
+            
+            // Clean up the blob URL after a short delay
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+          } catch (error) {
+            console.error('Error downloading file:', error);
+            // Fallback to direct download if fetch fails
+            const link = document.createElement('a');
+            link.href = currentObjectAttachment;
+            link.download = currentFileName || 'download';
+            link.setAttribute('target', '_blank');
+            shadow.appendChild(link);
+            link.click();
+            shadow.removeChild(link);
+          }
         };
 
         errorContainer.appendChild(errorMessage);

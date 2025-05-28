@@ -3,6 +3,7 @@ let scale = 1.0;
 let pdfUrl = null;
 let currentObjectAttachment = null;
 let currentMimeType = null;
+let currentFileName = null;
 let attachments = [];
 let printDocument = () => {}
 let attachmentProcessor = null;
@@ -94,7 +95,7 @@ const handleMouseClick = async function (event) {
   adjustDownloadButton(fileName, url);
   adjustPrintButton();
   adjustOpenTabButton(url)
-  injectFileToModal(url, mimeType);
+  injectFileToModal(url, mimeType, fileName);
 }
 
 const addHoverEffect = (element) => {
@@ -276,11 +277,33 @@ function adjustPrintButton() {
 
 function adjustDownloadButton(fileName, url, mimeType) {
   const downloadButton = shadow.getElementById("downloadButton");
-  downloadButton.onclick = () => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.click();
+  downloadButton.onclick = async () => {
+    console.debug('Downloading file:', fileName);
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      shadow.appendChild(link);
+      link.click();
+      shadow.removeChild(link);
+      
+      // Clean up the blob URL after a short delay
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      // Fallback to direct download if fetch fails
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.setAttribute('target', '_blank');
+      shadow.appendChild(link);
+      link.click();
+      shadow.removeChild(link);
+    }
   };
 }
 
@@ -363,7 +386,7 @@ const navigateAttachments = async (attachmentElements, direction) => {
   adjustDownloadButton(fileName, url);
   adjustPrintButton();
   adjustOpenTabButton(url)
-  injectFileToModal(url, mimeType);
+  injectFileToModal(url, mimeType, fileName);
   console.debug('New file injected into modal');
   currentAttachmentIndex = newIndex;
 };
@@ -464,8 +487,8 @@ async function injectObjectViewer() {
 }
 
 // Convert Base64 to Uint8Array
-function injectFileToModal(url, mimeType) {
-  const event = new CustomEvent("CustomEvent", { detail: { action: "injectPopup", data: url, mimeType: mimeType } });
+function injectFileToModal(url, mimeType, fileName) {
+  const event = new CustomEvent("CustomEvent", { detail: { action: "injectPopup", data: url, mimeType: mimeType, fileName: fileName } });
   console.debug("Dispatch 'injectPopup' event");
   document.dispatchEvent(event);
 }
