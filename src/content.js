@@ -421,6 +421,8 @@ function getMimeType(fileExtension) {
     rar: 'application/x-rar-compressed',
     doc: 'application/msword',
     xls: 'application/vnd.ms-excel',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     // Add more mappings as needed
   };
 

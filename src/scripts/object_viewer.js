@@ -103,6 +103,22 @@ window.onLoadObjectViewerScript = async () => {
         errorContainer.appendChild(errorMessage);
         errorContainer.appendChild(downloadButton);
         canvasContainer.appendChild(errorContainer);
+        return
+      }
+      // Handle .docx and .xlsx files with Microsoft Office Online Viewer
+      if (currentMimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          || currentMimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ) {
+        const viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(currentObjectAttachment)}`;
+        
+        const iframe = document.createElement('iframe');
+        iframe.src = viewerUrl;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+        
+        canvasContainer.appendChild(iframe);
         return;
       }
 
