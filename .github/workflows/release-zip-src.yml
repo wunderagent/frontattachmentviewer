@@ -1,0 +1,43 @@
+name: Manual Zip Source Files
+
+on:
+  workflow_dispatch:
+
+jobs:
+  zip-src:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version from manifest
+        id: get_version
+        run: |
+          VERSION=$(jq -r '.version' src/manifest.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: FrontAttachmentViewer-v${{ steps.get_version.outputs.version }}
+          path: src
+
+      - name: Cleanup old artifacts
+        if: success()
+        run: |
+          # Get list of artifacts
+          ARTIFACTS=$(gh api repos/${{ github.repository }}/actions/artifacts --jq '.artifacts[] | select(.name | startswith("FrontAttachmentViewer-v")) | {id, name, created_at}')
+          
+          # Sort by creation date (newest first) and keep only the first two
+          KEEP_IDS=$(echo "$ARTIFACTS" | jq -s 'sort_by(.created_at) | reverse | .[0:2] | .[].id')
+          
+          # Delete all other artifacts
+          echo "$ARTIFACTS" | jq -s 'sort_by(.created_at) | reverse | .[2:] | .[].id' | while read -r id; do
+            if [ ! -z "$id" ]; then
+              gh api repos/${{ github.repository }}/actions/artifacts/$id -X DELETE
+            fi
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
