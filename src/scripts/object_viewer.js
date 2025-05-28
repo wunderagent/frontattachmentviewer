@@ -60,6 +60,20 @@ window.onLoadObjectViewerScript = async () => {
         }
     }
   
+    function getLocalizedMessage() {
+      const messages = {
+        'en': 'This file type cannot be previewed. Please download the file to view it.',
+        'es': 'Este tipo de archivo no se puede previsualizar. Por favor, descargue el archivo para verlo.',
+        'fr': 'Ce type de fichier ne peut pas être prévisualisé. Veuillez télécharger le fichier pour le consulter.',
+        'de': 'Dieser Dateityp kann nicht in der Vorschau angezeigt werden. Bitte laden Sie die Datei herunter, um sie anzusehen.',
+        'it': 'Questo tipo di file non può essere visualizzato in anteprima. Scarica il file per visualizzarlo.',
+        'pt': 'Este tipo de arquivo não pode ser visualizado. Por favor, baixe o arquivo para visualizá-lo.'
+      };
+
+      const browserLang = navigator.language.split('-')[0]; // Get primary language code
+      return messages[browserLang] || messages['en']; // Fallback to English if language not supported
+    }
+
     function loadAttachment() {
       console.debug("Loading", currentObjectAttachment, currentMimeType, currentFileName);
       const canvasContainer = shadow.getElementById('attachment-container');
@@ -85,7 +99,7 @@ window.onLoadObjectViewerScript = async () => {
         errorContainer.style.gap = '20px';
 
         const errorMessage = document.createElement('p');
-        errorMessage.textContent = 'This file type cannot be previewed. Please download the file to view it.';
+        errorMessage.textContent = getLocalizedMessage();
         errorMessage.style.color = '#fff';
         errorMessage.style.fontSize = '16px';
         errorMessage.style.textAlign = 'center';
