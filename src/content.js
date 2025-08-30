@@ -11,21 +11,32 @@ const BASE_PATH = "/cell-00016/api/1/companies/ab15a3e2e8561d957cb4/attachments/
 
 const handleKeyPress = (event) => handleKeyPressGlobal(event);
 
+const shouldBeIgnored = (element) => {
+  const ref = element.getAttribute('href');
+  const dataTestId = element.getAttribute('data-testid');
+  const toBeIgnoredHrefs = ['#icon-downloadCircle', '#icon-downloadTiny', "#icon-x-circle/filled/20"];
+  const toBeIgnoredDataTestIds = ['crossCircle', "x-circle/filled/20"];
+  // Check if download button is clicked within Front App
+  if (toBeIgnoredHrefs.includes(ref)
+    // Close / Erase button etc. should be ignored
+    || toBeIgnoredDataTestIds.includes(dataTestId)
+    // Check if the click event is within the popup
+    || element.id === "extension-container"
+    || element.closest('#attachment-popup')) {
+    return true;
+  }
+  return false;
+}
+
 const handleMouseClick = async function (event) {
   console.debug('Click event detected:', event.target);
   let element = event.target;
 
   // get root attachment element
   while (element){
-    // Check if download button is clicked within Front App
-    if (element.getAttribute('href') === '#icon-downloadCircle'
-      || element.getAttribute('href') === '#icon-downloadTiny'
-      // Close / Erase button should be ignored
-      || element.getAttribute('data-testid') === 'crossCircle'
-      // Check if the click event is within the popup
-      || element.id === "extension-container"
-      || element.closest('#attachment-popup')) {
-      return
+
+    if (shouldBeIgnored(element)) {
+      return;
     }
 
     if (Array.from(element.classList).filter(data => data.startsWith("attachmentBase__StyledAttachmentButton")).length > 0
