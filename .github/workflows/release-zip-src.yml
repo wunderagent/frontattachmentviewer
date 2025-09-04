@@ -2,6 +2,9 @@ name: Manual Zip Source Files
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'release/*'
 
 jobs:
   zip-src:
