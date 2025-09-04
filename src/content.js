@@ -14,12 +14,12 @@ const handleKeyPress = (event) => handleKeyPressGlobal(event);
 const shouldBeIgnored = (element) => {
   const ref = element.getAttribute('href');
   const dataTestId = element.getAttribute('data-testid');
-  const toBeIgnoredHrefs = ['#icon-downloadCircle', '#icon-downloadTiny', "#icon-x-circle/filled/20"];
-  const toBeIgnoredDataTestIds = ['crossCircle', "x-circle/filled/20"];
+  const toBeIgnoredHrefs = ['#icon-downloadCircle', '#icon-downloadTiny', "#icon-x-circle"];
+  const toBeIgnoredDataTestIds = ['crossCircle', "x-circle"];
   // Check if download button is clicked within Front App
-  if (toBeIgnoredHrefs.includes(ref)
+  if (toBeIgnoredHrefs.some(name => ref.includes(name))
     // Close / Erase button etc. should be ignored
-    || toBeIgnoredDataTestIds.includes(dataTestId)
+    || toBeIgnoredDataTestIds.some(name => dataTestId.includes(name))
     // Check if the click event is within the popup
     || element.id === "extension-container"
     || element.closest('#attachment-popup')) {
