@@ -15,16 +15,20 @@ const shouldBeIgnored = (element) => {
   const ref = element.getAttribute('href');
   const dataTestId = element.getAttribute('data-testid');
   const toBeIgnoredHrefs = ['#icon-downloadCircle', '#icon-downloadTiny', "#icon-x-circle"];
-  const toBeIgnoredDataTestIds = ['crossCircle', "x-circle"];
+  const toBeIgnoredDataTestIds = ['crossCircle', "x-circle", "download"];
+
   // Check if download button is clicked within Front App
-  if (toBeIgnoredHrefs.some(name => ref.includes(name))
-    // Close / Erase button etc. should be ignored
-    || toBeIgnoredDataTestIds.some(name => dataTestId.includes(name))
-    // Check if the click event is within the popup
-    || element.id === "extension-container"
-    || element.closest('#attachment-popup')) {
+  if (ref && toBeIgnoredHrefs.some(name => ref.includes(name)))
     return true;
-  }
+
+    // Close / Erase button etc. should be ignored
+  if (dataTestId && toBeIgnoredDataTestIds.some(name => dataTestId.includes(name)))
+    return true;
+
+    // Check if the click event is within the popup
+  if (element.id === "extension-container"
+    || element.closest('#attachment-popup'))
+    return true;
   return false;
 }
 
